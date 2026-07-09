@@ -22,13 +22,13 @@ export type {
 } from '@/lib/builder/types';
 
 export { blockRegistry, getBlock, listBlockTypes, isBlockType } from '@/lib/builder/blocks';
-export { themes, getTheme, listThemes, themeCssVars } from '@/lib/builder/themes';
+export { themes, getTheme, listThemes, themeCssVars } from '@/themes';
 export {
   industryRegistry,
   getIndustry,
   listIndustries,
   matchIndustryByCategory,
-} from '@/lib/builder/industries';
+} from '@/industries';
 export { templateRegistry, getTemplate, listTemplates } from '@/templates/registry';
 export { composePage, hasLayout } from '@/lib/builder/compose';
 export { buildBlockContext } from '@/lib/builder/context';

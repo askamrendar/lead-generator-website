@@ -6,7 +6,7 @@ import { FAQ } from '@/components/site/FAQ';
 import { CTASection } from '@/components/site/CTASection';
 import { ServiceCard } from '@/components/site/ServiceCard';
 import { LocationCard } from '@/components/site/LocationCard';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { MapEmbed } from '@/components/site/MapEmbed';
 import { EmergencyCTA } from '@/components/site/EmergencyCTA';
 import { CommonProblems } from '@/components/site/CommonProblems';

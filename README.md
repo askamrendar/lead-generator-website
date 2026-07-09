@@ -8,9 +8,11 @@ that turns one typed business config into a full multi-page marketing site —
 homepage, service pages, location pages, contact, lead capture, structured data,
 sitemap, and robots — with a live intake form that produces new configs.
 
-> **Status:** Phase 0 (setup) + Generator Core complete. See [`ROADMAP.md`](./ROADMAP.md)
-> for the full phased plan and [`PROJECT_MANIFEST.md`](./PROJECT_MANIFEST.md) for the
-> exact next task.
+> **Status:** v0.6.0 — Generator Core, SEO Engine, AI Content + Rendering, Website
+> Builder, and Production Hardening complete; repository restructured to the
+> enterprise layout (Phase 6). See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the
+> full picture, [`ROADMAP.md`](./ROADMAP.md) for the phased plan, and
+> [`PROJECT_MANIFEST.md`](./PROJECT_MANIFEST.md) for the exact next task.
 
 ---
 
@@ -48,43 +50,56 @@ npm run dev
 # open http://localhost:3000
 ```
 
-Verify the build:
+Verify the build (all four must pass — CI runs the same set):
 
 ```bash
-npm run typecheck   # tsc --noEmit
 npm run lint        # next lint
-npm run build       # next build
+npm run type-check  # tsc --noEmit
+npm test            # node --test (17 cases, zero deps)
+npm run build       # next build (83 routes)
 ```
 
 ---
 
 ## Project structure
 
+Root alias `@/*` → repo root. Full detail in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
 ```
-app/                       # App Router pages (all generated from config)
-  layout.tsx               # root layout + brand theming + global schema
-  page.tsx                 # homepage
-  about/ contact/          # static-ish company pages
-  services/[slug]/         # dynamic service pages
-  locations/[state]/[city]/# dynamic location pages
-  generate/                # business intake form (SaaS entry point)
-  api/generate/            # validates + returns a config
-  sitemap.ts robots.ts manifest.ts
+app/                       # App Router routes (all generated from config)
+  layout.tsx page.tsx      # root layout + homepage
+  about/ contact/ generate/# company pages + intake form
+  services/[slug]/…        # dynamic service + service×city pages
+  locations/…              # state / city / county / zip / neighborhood pages
+  preview/                 # live Website Builder demo (noindex)
+  api/{lead,generate,ai/*} # lead capture, config validation, AI management
+  sitemap.ts robots.ts manifest.ts not-found.tsx globals.css
 components/
-  ui/                      # button, card, input, textarea, label, badge
-  layout/                  # Header, Footer, StickyCallButton
-  site/                    # Hero, CTASection, ServiceCard, LocationCard, FAQ, LeadForm, ...
+  ui/                      # primitives (button, card, input, …)
+  layout/                  # Header, Footer, Breadcrumbs, StickyCallButton
+  builder/                 # BlockRenderer, ThemeProvider
+  blocks/                  # 22 builder blocks
+  forms/                   # LeadForm
+  seo/                     # JsonLd
+  site/                    # page-section components (Hero, FAQ, Reviews, CTAs, …)
 lib/
-  utils.ts                 # cn()
-  generator/
-    schema.ts              # Zod BusinessConfig (single source of truth)
-    config.ts              # selectors: getService, getCity, path builders, slugify
-    content.ts             # deterministic-but-unique copy engine (LLM-swappable)
-  seo/
-    metadata.ts            # Next Metadata builders
-    schema.ts              # JSON-LD builders
-data/
-  business.ts              # sample business (Apex Plumbing Co.)
+  ai/                      # providers, prompts, cache (+ freshness), services,
+                           # agents, render, validation, versioning, generation
+  api/                     # security (admin auth, rate limit, serverError)
+  builder/                 # types, blocks, compose, select, context, registry
+  generator/               # schema (Zod config), config (geo/paths), content, links
+  seo/                     # metadata + JSON-LD builders
+  forms/ leads/            # intake/lead schemas + lead record types
+  site.ts utils.ts         # canonical origin (single source of truth) + cn()
+themes/                    # 8 CSS-variable themes + ThemeProvider tokens
+industries/                # 5 industry packs (plumbing/hvac/roofing/electrical/generic)
+templates/                 # base/plumber/hvac/generic JSON layouts + registry
+data/business.ts           # sample business (Apex Plumbing Co.)
+scripts/                   # pregenerate.mjs
+tests/                     # node --test suites
+docs/                      # deep-dive docs + decision log
+.github/                   # CI workflow + issue/PR templates
+.ai/                       # agent working memory (pointers + logs)
 ```
 
 ---
@@ -246,9 +261,12 @@ industry, and page type live via the control bar:
 
 ## Documentation
 
-- [`ROADMAP.md`](./ROADMAP.md) — 16-phase plan
-- [`PROJECT_MANIFEST.md`](./PROJECT_MANIFEST.md) — build status + resume point
-- [`CHANGELOG.md`](./CHANGELOG.md) — completed features
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — implemented + planned architecture, gap analysis, implementation order
+- [`docs/`](./docs/) — deep dives (ai, builder, seo, api, testing, deployment, contributing) + [decision log](./docs/decision-log.md)
+- [`ROADMAP.md`](./ROADMAP.md) — phased plan + future-module milestones
+- [`PROJECT_MANIFEST.md`](./PROJECT_MANIFEST.md) — build status + resume point + planned register
+- [`CHANGELOG.md`](./CHANGELOG.md) — release notes
+- [`SECURITY.md`](./SECURITY.md) — security posture
 - [`LICENSE`](./LICENSE)
 
 ## License

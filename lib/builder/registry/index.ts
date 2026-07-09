@@ -1,6 +1,6 @@
 import { blockRegistry } from '@/lib/builder/blocks/registry';
-import { themes } from '@/lib/builder/themes/registry';
-import { industryRegistry } from '@/lib/builder/industries/registry';
+import { themes } from '@/themes/registry';
+import { industryRegistry } from '@/industries/registry';
 import { templateRegistry } from '@/templates/registry';
 import { composePage } from '@/lib/builder/compose';
 import { componentRegistry, listComponents } from '@/lib/builder/registry/components';

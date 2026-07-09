@@ -77,31 +77,44 @@ A phased plan for the full SaaS. Each phase must keep the project **buildable**.
 - [x] `/preview` route renders any business as a themed, block-driven site (switch template/theme/industry/page live)
 - [ ] Remaining verticals (roofing/mold/cleaning/etc. templates), visual drag-order editor *(one file each / future UI)*
 
-## Phase 8 — Blog Engine  `[~]`
-- [x] Generators foundation (topics, outlines, keyword maps, article prompts, categories, tags)
-- [ ] Blog pages, routing, RSS, topic-cluster wiring *(this phase deferred them intentionally)*
-## Phase 9 — Image Engine  `[ ]`
-## Phase 10 — Lead Generation  `[~]`
-- [x] Sticky call button, lead form, click-to-call
-- [ ] Multi-step form, popups/exit-intent, CRM + email hooks
+## Phase 5.5 — Production Hardening  `[x]`
+- [x] Single-source site origin + build guard; `/api/lead` rate limit + honeypot fix
+- [x] Unified cache freshness; consistent API error handling; admin-gated cache read
+- [x] `SECURITY.md`, env docs, first test suite (`npm test`). See CHANGELOG `[0.5.1]`.
 
-## Phase 11 — Admin Dashboard  `[ ]`
-## Phase 12 — Customer Dashboard  `[ ]`
-## Phase 13 — Billing / Subscriptions / Credits  `[ ]`
-## Phase 14 — Deployment / Custom Domains / CI  `[ ]`
-## Phase 15 — Performance / Accessibility / Security / Testing  `[~]`
-- [x] Security headers, image optimization config, semantic HTML/a11y baseline
-- [x] Render pipeline never blocks (read-only cache; no provider calls at render)
-- [x] Rate limiting + retry on provider calls; SSG/ISR preserved
-- [ ] Test suite, Lighthouse CI, full audit
+## Phase 6 — Restructuring & Engineering Standards  `[x]`
+- [x] Promote `themes/` + `industries/` to repo root; `LeadForm`→`components/forms`, `JsonLd`→`components/seo`
+- [x] Add `ARCHITECTURE.md`, `docs/`, `.github/` (CI + templates), `.ai/` (working memory)
+- [x] Document (not scaffold) all future modules; routes/SEO verified byte-identical
+
+> **Future modules are documented, not scaffolded.** Each folder below is created
+> only when real production code lands (see `ARCHITECTURE.md` §2).
+
+## Phase 8 — Blog Engine  `[~]`  →  `app/blog/`, `lib/blog/`
+- [x] Generators foundation (topics, outlines, keyword maps, article prompts, categories, tags)
+- [ ] Blog pages, routing, RSS, topic-cluster wiring *(deferred intentionally)*
+## Phase 9 — Image / Media Engine  `[ ]`  →  `lib/media/`, `public/`
+- [ ] Real image generation from existing prompts, storage/CDN, optimization
+## Phase 10 — Lead Generation / CRM  `[~]`  →  `lib/crm/`
+- [x] Sticky call button, lead form, click-to-call, server-side capture + anti-spam
+- [ ] Persistence + CRM/email/SMS delivery (the `app/api/lead` seam), multi-step form
+## Phase 1 — Authentication & Organizations  `[ ]`  →  `lib/auth/`, `app/(auth)/`  *(foundational)*
+- [ ] Accounts, sessions, orgs/teams, RBAC, database (Prisma + Postgres)
+## Phase 11 — Admin console  `[ ]`  →  `app/admin/`, `lib/admin/`
+## Phase 12 — Customer Dashboard  `[ ]`  →  `app/dashboard/`, `components/dashboard/`
+## Phase 13 — Billing / Subscriptions / Credits  `[ ]`  →  `lib/billing/`
+## Phase 14 — Deployment / Custom Domains / CI  `[ ]`  →  `lib/deployment/`
+## Phase 15 — Analytics, Logging, Performance, A11y, Security, Testing  `[~]`
+- [x] Security headers, render pipeline never blocks, rate limiting + retry, test suite + CI
+- [ ] Analytics (`lib/analytics/`), structured Logging (`lib/logging/`), Lighthouse CI, full audit
 
 ---
 
 ### Current milestone
-**Website Builder** (Template + Block Engine) — complete and build-verified. Any
-business renders as a themed, JSON/block-driven site; template + theme + industry
-are auto-selected (heuristic or AI) and swappable. See `/preview`.
+**Phase 6 — Restructuring** complete and build-verified. Implemented code sits in
+a clean enterprise layout; future modules are documented, not scaffolded.
 
 ### Next milestone
-Phase 8 (Blog Engine pages) **or** more industry/theme packs + a visual block
-editor **or** Phase 9 (image generation). See `PROJECT_MANIFEST.md`.
+Recommended order (value ÷ dependency): **Logging → Blog pages → CRM delivery →
+Media → Auth →** Dashboard → Admin → Billing → Deployment → Analytics.
+See `ARCHITECTURE.md` §4 and `PROJECT_MANIFEST.md`.

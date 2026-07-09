@@ -18,9 +18,9 @@ import { ServiceCard } from '@/components/site/ServiceCard';
 import { LocationCard } from '@/components/site/LocationCard';
 import { Reviews } from '@/components/site/Reviews';
 import { FAQ } from '@/components/site/FAQ';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { CTASection } from '@/components/site/CTASection';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { faqSchema } from '@/lib/seo/schema';
 
 export async function generateMetadata(): Promise<Metadata> {
