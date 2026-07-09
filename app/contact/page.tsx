@@ -10,9 +10,9 @@ import {
 import { formatPhone, telHref } from '@/lib/utils';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { MapEmbed } from '@/components/site/MapEmbed';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema } from '@/lib/seo/schema';
 
 export const metadata: Metadata = buildMetadata({

@@ -15,10 +15,10 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { ServiceCard } from '@/components/site/ServiceCard';
 import { RelatedLinks } from '@/components/site/RelatedLinks';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { CTASection } from '@/components/site/CTASection';
 import { Badge } from '@/components/ui/badge';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema, graph, placeSchema } from '@/lib/seo/schema';
 
 export function generateStaticParams() {

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { ThemeTokens } from '@/lib/builder/types';
-import { DEFAULT_FONT } from '@/lib/builder/themes/registry';
+import { DEFAULT_FONT } from '@/themes/registry';
 
 /**
  * Serialize a theme to CSS custom properties. These map directly onto the

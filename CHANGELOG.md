@@ -3,6 +3,48 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.0] — Restructuring & Engineering Standards (Phase 6)
+
+Reorganizes the **implemented** code into a clean, enterprise-grade layout and
+**documents** (does not scaffold) the future modules. Behavior-preserving: no
+routes, SEO, AI rendering, or tests changed — only file locations, import
+aliases, and documentation. Git history preserved via `git mv`.
+
+### Moved (via `git mv`)
+- `lib/builder/themes/` → **`themes/`** and `lib/builder/industries/` →
+  **`industries/`** — promoted to first-class top-level domains
+  (`@/themes`, `@/industries`). `lib/builder/types.ts` remains their shared contract.
+- `components/site/LeadForm.tsx` → **`components/forms/LeadForm.tsx`**.
+- `components/JsonLd.tsx` → **`components/seo/JsonLd.tsx`**.
+- All `@/…` import aliases rewritten accordingly; zero stale references.
+
+### Added
+- **`ARCHITECTURE.md`** (root) — implemented architecture (layers, directory map,
+  data flow, dependency/import map), planned future architecture (per-module
+  purpose/responsibilities/location/dependencies/phase), gap analysis, and a
+  recommended implementation order.
+- **`docs/`** — deep dives: `ai.md`, `builder.md`, `seo.md`, `api.md`,
+  `testing.md`, `deployment.md`, `contributing.md`, `decision-log.md` (ADRs), and
+  an index `README.md`.
+- **`.github/`** — `workflows/ci.yml` (runs lint → type-check → test → build on
+  push/PR), issue templates (bug/feature), and a PR template.
+- **`.ai/`** — agent working memory (`state.md` pointer, `session-log.md`,
+  `checkpoints.md`, `ai-memory.md`) that complements — never duplicates — the manifest.
+- Updated `README.md`, `PROJECT_MANIFEST.md` (Phase 6 + "Planned / Not Yet
+  Implemented" register), and `ROADMAP.md` (future modules mapped to folders).
+
+### Deliberately unchanged (see `docs/decision-log.md`)
+- `components/site/` (92 refs — rename adds no value), `lib/ai/cache/` (AI-coupled),
+  `lib/api|forms|leads`, flat `templates/`, and **`app/` routing** (max SEO safety).
+- **No empty folders or stub code** for unbuilt modules (Auth, Billing, CRM,
+  Dashboard, Admin, Blog, Deployment, Media, Analytics, Logging) — documented only.
+- `public/` not created (no static assets yet).
+
+### Verified
+- `lint` + `type-check` + `test` (17/17) + `build` (83 routes) all pass. The
+  sitemap (66 URLs) and prerendered route table (71) are **byte-identical** to the
+  pre-restructure baseline — routes and SEO fully preserved.
+
 ## [0.5.1] — Production Hardening (Phase 5.5)
 
 Consistency, reliability, and correctness pass over the existing surfaces — no

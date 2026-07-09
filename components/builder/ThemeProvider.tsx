@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
-import { themeCssVars } from '@/lib/builder/themes/css';
-import { getTheme } from '@/lib/builder/themes/registry';
+import { themeCssVars } from '@/themes/css';
+import { getTheme } from '@/themes/registry';
 import type { ThemeId } from '@/lib/builder/types';
 
 /**

@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { ServiceCard } from '@/components/site/ServiceCard';
 import { LocationCard } from '@/components/site/LocationCard';
 import { FAQ } from '@/components/site/FAQ';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { MapEmbed } from '@/components/site/MapEmbed';
 import { CTASection } from '@/components/site/CTASection';
 import { EmergencyCTA } from '@/components/site/EmergencyCTA';

@@ -6,7 +6,7 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { LocationCard } from '@/components/site/LocationCard';
 import { CTASection } from '@/components/site/CTASection';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema } from '@/lib/seo/schema';
 
 export const metadata: Metadata = buildMetadata({

@@ -11,14 +11,14 @@ import { formatPhone, telHref } from '@/lib/utils';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { FAQ } from '@/components/site/FAQ';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { LocationCard } from '@/components/site/LocationCard';
 import { RelatedLinks } from '@/components/site/RelatedLinks';
 import { CTASection } from '@/components/site/CTASection';
 import { serviceLinks } from '@/lib/generator/links';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import {
   breadcrumbSchema,
   faqSchema,

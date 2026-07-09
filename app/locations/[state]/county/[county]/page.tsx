@@ -11,7 +11,7 @@ import { SectionHeading } from '@/components/site/SectionHeading';
 import { LocationCard } from '@/components/site/LocationCard';
 import { RelatedLinks } from '@/components/site/RelatedLinks';
 import { CTASection } from '@/components/site/CTASection';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema, graph, placeSchema } from '@/lib/seo/schema';
 
 export function generateStaticParams() {

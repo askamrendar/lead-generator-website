@@ -5,7 +5,7 @@ import { buildRootMetadata } from '@/lib/seo/metadata';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { StickyCallButton } from '@/components/layout/StickyCallButton';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { getCities, getServices, paths } from '@/lib/generator/config';
 import {
   graph,

@@ -18,13 +18,13 @@ import { StatBar } from '@/components/site/StatBar';
 import { CommonProblems } from '@/components/site/CommonProblems';
 import { EmergencyCTA } from '@/components/site/EmergencyCTA';
 import { FAQ } from '@/components/site/FAQ';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { MapEmbed } from '@/components/site/MapEmbed';
 import { RelatedLinks } from '@/components/site/RelatedLinks';
 import { CTASection } from '@/components/site/CTASection';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import {
   breadcrumbSchema,
   faqSchema,

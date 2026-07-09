@@ -5,9 +5,9 @@ import {
   getIndustry,
   listIndustries,
   matchIndustryByCategory,
-} from '@/lib/builder/industries';
+} from '@/industries';
 import { getTemplate, listTemplates, templateRegistry } from '@/templates/registry';
-import { getTheme, listThemes } from '@/lib/builder/themes/registry';
+import { getTheme, listThemes } from '@/themes/registry';
 import type { IndustryPack, Template, ThemeId } from '@/lib/builder/types';
 
 /**
