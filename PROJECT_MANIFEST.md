@@ -3,14 +3,19 @@
 > Update this file at the end of every coding session so the next session resumes cleanly.
 
 ## Build status
-- **Last action:** Production Hardening (Phase 5.5) — consistency/reliability
-  pass over existing surfaces (site-URL wiring, lead endpoint, cache readers,
-  API error handling, env docs, SECURITY.md, first test suite). No new features.
+- **Last action:** Phase 6 — Restructuring & Engineering Standards. Reorganized
+  **implemented** code into the enterprise layout and **documented** (did not
+  scaffold) future modules. Moves via `git mv` (history preserved):
+  `lib/builder/themes`→`themes/`, `lib/builder/industries`→`industries/`,
+  `components/JsonLd.tsx`→`components/seo/`, `components/site/LeadForm.tsx`→
+  `components/forms/`. Added `docs/`, `.github/` (CI + templates), `.ai/`, and
+  root `ARCHITECTURE.md`. No behavior change.
 - **Build verified?** ✅ Yes (Node v22.22.3 / Next.js 15.5.20):
-  - `npm run typecheck` / `npm run lint` / `npm test` (17/17) / `npm run build`
-    → all clean; **83 routes**; deterministic offline build unchanged.
-- **Every change is scoped to hardening** — no new routes, no architectural
-  changes; the site renders as before but now emits correct production URLs.
+  - `npm run lint` / `npm run type-check` / `npm test` (17/17) / `npm run build`
+    → all clean; **83 routes**. Sitemap (66 URLs) + prerendered route table (71)
+    verified **byte-identical** to the pre-restructure baseline (SEO preserved).
+- **Restructure is behavior-preserving** — no routes, SEO, AI rendering, or tests
+  changed; only file locations + import aliases + documentation.
 - **Re-verify commands:**
   ```bash
   npm install
@@ -104,8 +109,42 @@ keep `typecheck`/`lint`/`test`/`build` green. See CHANGELOG `[0.5.1]` for detail
 - **Testing:** `tests/` + `npm test` — 17 zero-dependency `node --test` cases
   (lead/honeypot, rate limiter, site-URL guard, cache freshness).
 
+## Phase 6 — Restructuring & Engineering Standards (this session)
+Reorganized implemented code into the enterprise layout; documented future
+modules without scaffolding. See CHANGELOG `[0.6.0]`, `ARCHITECTURE.md`, and
+`docs/decision-log.md`.
+- **Moves (git mv):** `themes/` + `industries/` promoted to repo root; `LeadForm`
+  → `components/forms/`; `JsonLd` → `components/seo/`. All `@/…` aliases rewritten.
+- **New:** root `ARCHITECTURE.md`; `docs/` (ai/builder/seo/api/testing/deployment/
+  contributing/decision-log + index); `.github/` (CI + issue/PR templates);
+  `.ai/` (working memory, pointers to this manifest).
+- **Kept in place (deliberate):** `components/site/` (92 refs, no gain from
+  rename), `lib/ai/cache/` (AI-coupled), `lib/api|forms|leads`, flat `templates/`,
+  and **`app/` routing untouched** (max SEO safety). `public/` not created (no
+  assets yet). Rationale in `docs/decision-log.md`.
+
+## Planned / Not Yet Implemented
+Documented in `ARCHITECTURE.md` (§2) and `ROADMAP.md`. **No folders or stub code
+exist for these** — a directory is created only when real code lands.
+
+| Module | Target location | Depends on | Phase |
+| --- | --- | --- | --- |
+| Logging / Observability | `lib/logging/` | cross-cutting | 15+ (adopt early) |
+| Blog Engine (pages) | `app/blog/`, `lib/blog/` | AI + SEO (exist) | 8 |
+| CRM / Lead pipeline | `lib/crm/` | database, Auth | 10 (completion) |
+| Media / Image Engine | `lib/media/`, `public/` | AI, storage | 9 |
+| Authentication & Orgs | `lib/auth/`, `app/(auth)/` | database | 1 (foundational) |
+| Customer Dashboard | `app/dashboard/` | Auth | 12 |
+| Admin console | `app/admin/`, `lib/admin/` | Auth | 11 |
+| Billing / Credits | `lib/billing/` | Auth | 13 |
+| Deployment / Domains | `lib/deployment/` | Auth, Billing | 14 |
+| Analytics | `lib/analytics/` | Auth | 15+ |
+
+Recommended build order (value ÷ dependency): Logging → Blog → CRM → Media →
+Auth → Dashboard → Admin → Billing → Deployment → Analytics (see `ARCHITECTURE.md` §4).
+
 ## Current task
-None in progress. Phase 5.5 (Production Hardening) complete and build-verified.
+None in progress. Phase 6 (Restructuring) complete and build-verified.
 
 ## Next task (resume here)
 Pick ONE:

@@ -18,7 +18,7 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { ServiceCard } from '@/components/site/ServiceCard';
 import { LocationCard } from '@/components/site/LocationCard';
-import { LeadForm } from '@/components/site/LeadForm';
+import { LeadForm } from '@/components/forms/LeadForm';
 import { Reviews } from '@/components/site/Reviews';
 import { RelatedLinks } from '@/components/site/RelatedLinks';
 import { CTASection } from '@/components/site/CTASection';
@@ -26,7 +26,7 @@ import { MapEmbed } from '@/components/site/MapEmbed';
 import { cityLinks } from '@/lib/generator/links';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import {
   breadcrumbSchema,
   graph,

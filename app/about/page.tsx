@@ -9,7 +9,7 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { Stats } from '@/components/site/Stats';
 import { CTASection } from '@/components/site/CTASection';
-import { JsonLd } from '@/components/JsonLd';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema } from '@/lib/seo/schema';
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -3,4 +3,4 @@ export {
   getIndustry,
   listIndustries,
   matchIndustryByCategory,
-} from '@/lib/builder/industries/registry';
+} from '@/industries/registry';
