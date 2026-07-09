@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(sed -n '1,30p' app/preview/page.tsx)",
+      "Bash(grep -rn \"data/business\\\\|@/data/business\" lib/generator lib/seo lib/forms)",
+      "Bash(grep -rniE \"apex|austin|512-555|4\\\\.9\" lib/generator lib/seo lib/forms)"
+    ]
+  }
+}

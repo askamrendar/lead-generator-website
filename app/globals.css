@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens. Brand-specific values (--brand, --accent, --radius) are
+ * injected at runtime from the BusinessConfig in app/layout.tsx, so the same
+ * codebase themes itself to any generated business. The fallbacks below keep
+ * things sane if none are provided.
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-fg: 215 16% 40%;
+    --border: 214 32% 91%;
+
+    --brand: 221 83% 53%;
+    --brand-fg: 0 0% 100%;
+    --accent: 24 95% 53%;
+    --accent-fg: 0 0% 100%;
+
+    --radius: 0.75rem;
+
+    --font-sans:
+      ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+      Arial, sans-serif;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-fg: 215 20% 65%;
+    --border: 217 33% 22%;
+    --brand-fg: 0 0% 100%;
+    --accent-fg: 0 0% 100%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Respect reduced-motion preferences. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Extra bottom padding on mobile so the sticky call bar never covers content. */
+@layer utilities {
+  .pb-safe-mobile {
+    padding-bottom: 4rem;
+  }
+  @media (min-width: 768px) {
+    .pb-safe-mobile {
+      padding-bottom: 0;
+    }
+  }
+}
