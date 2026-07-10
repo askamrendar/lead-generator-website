@@ -3,6 +3,268 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Dashboard Redesign (product-quality pass)
+
+A reuse-first upgrade of the dashboard toward a Vercel/Linear-class product feel, on
+the **existing design system**. No new deps, no auth/authorization/model changes.
+Marketing/SEO byte-preserved (home static, **sitemap 66**, home **JSON-LD = 4 blocks**).
+
+### Added
+- **Action-oriented home** (`app/dashboard/page.tsx` + `components/dashboard/home/*`):
+  welcome, real workspace counts, quick actions, "Continue working" (real recent
+  websites), and **honest** placeholder panels (deployments/AI/domains/activity/build
+  queue/system health/AI credits/updates) — never fabricated data.
+- **Command palette (⌘K / Ctrl+K)** (`lib/search/` + `components/dashboard/CommandPalette.tsx`
+  + `app/dashboard/search-actions.ts`): keyboard-navigable, searches static commands +
+  **tenant-scoped** websites (via the service), extensible by group. Header search is now
+  a ⌘K trigger.
+- **Settings reorganized** (`app/dashboard/settings/*` + `SettingsNav`): 11 sections —
+  Profile, Organization, Workspace (real from context), Preferences (theme), Security,
+  AI/Deployment Providers (structured), API Keys, Domains, Notifications, Danger Zone. No billing.
+- **Website Manager actions** completed (`WebsiteActions`): full set (Open/Builder/Generate/
+  SEO/Pages/Deploy/Domains/Analytics/Media/Versions/Rename/Duplicate/Archive/Download ZIP/Delete),
+  mapped to detail tabs.
+- **Create Website wizard** gains an entry step: **Manual / Import URL / Google Business
+  Profile** (seed fields carry forward; AI auto-determination deferred to 7.2.4, marked).
+- **Deployment & Domain UI shells** on the website tabs (status/history/env-vars/logs/
+  rollback/provider; DNS/SSL) — **UI only, no logic**, ready for Phase 8/8.5.
+- Reusable `components/ui/panel.tsx`, `components/dashboard/{InfoList,SettingsNav,SettingsPlaceholder}`.
+
+### Changed
+- `DashboardHeader` search → command-palette trigger; `DashboardShell` registers the
+  global ⌘K shortcut and mounts the palette.
+
+### Tests
+- `tests/search.test.mjs` (registry: static commands, filter, group order). **Suite 76/76.**
+
+### Verification
+- `lint` · `type-check` · `test` (76/76) · `build` — all green; SEO/sitemap/JSON-LD unchanged.
+
+## [Unreleased] — Phase 7.2.3 · Website Manager
+
+The Website Manager — create, organize, and manage websites (it does **not** edit
+content; the Visual Builder remains separate). Website is the central aggregate;
+future modules attach to it. Additive; marketing routes/SEO byte-preserved (home
+static, sitemap 66). No generation/builder/deployment.
+
+### Database
+- `Website` extended (migration `0002_website_manager`, additive): `language`,
+  `timezone`, `businessConfig` (wizard config — the single home for business info),
+  `archivedAt`, + `[projectId, status]` index. `prisma generate` run; migration is
+  developer-applied.
+
+### Added — data layer (`lib/websites/`)
+- `service.ts` — the only read/write path for websites; **every op flows through the
+  tenant-access layer** (`require*Access` + RBAC) and returns DTOs. Lazily provisions a
+  default Project per workspace; unique slug per project. `list/get/create/rename/
+  duplicate/archive/restore/delete`.
+- `schema.ts` (Zod wizard steps — PURE, tested), `status.ts` (derived badges — PURE,
+  tested), `types.ts`, `nav.ts` (per-website tab config).
+
+### Added — UI (`app/dashboard/websites/`, `components/websites/`)
+- **List** — filterable/searchable table (`WebsiteList`), status badges, per-row
+  `WebsiteActions` (rename modal, duplicate, archive/restore, delete confirm; export/
+  connect-domain/preview marked soon).
+- **Creation wizard** (`WebsiteWizard`) — 6 steps (Business, Location, Brand, Details,
+  SEO, Review), per-step Zod validation; **stores configuration only** (no generation).
+- **Website detail shell** — `[websiteId]/layout.tsx` (loads via tenant-access → 404 on
+  no-access) + config-driven tab nav (Overview, Builder, AI Generator, Pages, SEO,
+  Deployments, Domains, Media, Analytics, Versions, Settings). Overview (real) + Settings
+  (rename + archive/restore + delete) are live; the rest are placeholders.
+- Server actions (`actions.ts`) wrap the service with revalidation + redirects.
+
+### Tests
+- `tests/website-schema.test.mjs` + `website-status.test.mjs` (+10). **Suite 73/73 pass.**
+
+### Verification
+- `lint` · `type-check` · `test` (73/73) · `build` — all green; sitemap 66, home static.
+
+## [Unreleased] — Phase 7.2.2 · Dashboard Foundation
+
+The permanent authenticated app shell every future module mounts into. Additive;
+marketing routes/SEO byte-preserved (home static, sitemap 66). No Website/CRUD/Builder
+features (placeholder pages only).
+
+### Added — shell (`components/dashboard/`, `app/dashboard/`)
+- `DashboardLayout` (server: loads tenant context, redirects if unauthenticated) →
+  `DashboardShell` (responsive: fixed desktop sidebar + mobile drawer + sticky header,
+  content wrapped in an `ErrorBoundary`). `SidebarNav` (config-driven, active state,
+  "Soon" chips), `DashboardHeader`, `Breadcrumbs`, `OrganizationSwitcher`,
+  `WorkspaceSwitcher`, `UserMenu`, `NotificationsButton` (placeholder), `PageContainer`,
+  `PlaceholderPage`.
+- Pages: `app/dashboard/` home (stat cards + recent-activity placeholder) + 10 routes
+  (websites, templates, ai-generator, deployments, domains, media, team, api-keys,
+  settings, help). Route group protected by middleware; layout is `force-dynamic`, noindex.
+
+### Added — generic UI primitives (`components/ui/`)
+- `dropdown`, `modal` (Modal + Drawer), `confirm-dialog`, `skeleton`, `loading-overlay`,
+  `error-boundary`, `page-header`, `empty-state`, `stat-card`, `data-table` (generic),
+  `action-menu`, `search-input`, `filter-bar`, `pagination` — dependency-free, accessible,
+  reusable by every future module.
+
+### Added — data/config (`lib/dashboard/`)
+- `nav.ts` (config-driven navigation — the single source; new modules register here),
+  `context.ts` (`loadDashboardContext`: session + memberships + workspaces, cookie-based
+  current selection, membership-scoped), `actions.ts` (org/workspace switch server actions
+  that **validate membership via the tenant-access layer** before persisting).
+
+### Changed
+- `middleware.ts` matcher now also covers the `/dashboard` and `/app` base paths.
+
+### Verification
+- `lint` · `type-check` · `test` (63/63) · `build` — all green; **sitemap 66 preserved**,
+  marketing home still static, 11 dashboard routes dynamic behind auth. UI is
+  compile-verified; component/DOM tests remain backlog `T-002`.
+
+## [Unreleased] — Phase 7.2.1 · Authentication Experience
+
+The complete auth UI over the existing 7.1 APIs. Additive; marketing routes and SEO
+are byte-preserved (sitemap 66 URLs; home/about/contact/generate/locations unchanged).
+
+### Added — pages (`app/(auth)/`, noindex, chrome-free)
+- `login`, `register`, `forgot-password`, `reset-password`, `verify-email`, `logout`,
+  and `invitations/[token]` (accept), plus a centered `AuthLayout` (brand mark, theme
+  toggle, toast provider).
+
+### Added — components (`components/auth/`)
+- `LoginForm`, `RegisterForm`, `ForgotPasswordForm`, `ResetPasswordForm`,
+  `AcceptInvitationForm`, `VerifyEmailClient`, `LogoutClient`; shared `FormField`,
+  `LoadingButton`, `PasswordField` (show/hide), `PasswordStrengthMeter`, `OAuthButtons`,
+  `RememberMe`, `AuthCard`, `AuthDivider`.
+- Infra: `components/ui/toast.tsx` (dependency-free toast provider), `components/theme/theme.tsx`
+  (dark-mode toggle + no-FOUC script), `components/layout/SiteChrome.tsx` (hides marketing
+  chrome on app routes — marketing output unchanged).
+- `lib/auth/password-strength.ts` (pure, tested) · `lib/auth/providers/enabled.ts`
+  (server-side enabled-OAuth list, offline-safe).
+
+### Added — API
+- `POST /api/auth/accept-invitation` — consumes a hashed invite token → org (+team)
+  membership, idempotent; requires the session email to match. (Invite *creation* is Phase 9.)
+
+### Changed
+- `app/layout.tsx` — routes marketing chrome through `SiteChrome`; adds the theme
+  no-FOUC script. Marketing SSR output (JSON-LD, sitemap, routes) unchanged.
+
+### UX
+- Google/GitHub sign-in (auto-shown only when configured), Remember-me (email prefill),
+  dark mode, loading states, toasts, mobile-responsive, accessible forms
+  (`aria-invalid`/`aria-describedby`/`role="alert"`, labeled controls, live regions).
+  Wired open-redirect-safe callback handling. Future-ready for MFA/passkeys/magic-links/SSO.
+
+### Tests
+- `tests/auth-password-strength.test.mjs` (pure scorer). **Suite 63/63 pass.** UI is
+  compile-verified (type-check + build); component/DOM tests remain backlog `T-002`.
+
+### Verification
+- `lint` · `type-check` · `test` (63/63) · `build` — all green; sitemap 66 preserved.
+
+## [Unreleased] — Phase 7.2.0 · Authorization & Tenant Access Foundation
+
+The centralized authorization layer — the **single supported way** to access any
+tenant resource. Additive; no engine, route, or SEO change (sitemap 66 URLs preserved).
+
+### Added — `lib/auth/access/`
+- **Pure decision core** (`engine.ts`, `errors.ts`, `context.ts`) — fully unit-tested,
+  no Prisma/Auth.js/next: `buildAccessContext` (authenticate → confirm membership
+  → authorize → scope), `authorize`/`resolveEffectiveRole`/`assertAuthenticated`/
+  `assertFound`, `permissionsForRole`, and `*Scope` helpers that derive tenant `where`
+  fragments from a context.
+- **Node resolver** (`resolver.ts`) — `requireOrganizationAccess` / `requireWorkspaceAccess`
+  / `requireProjectAccess` / `requireWebsiteAccess`, built from a `defineResourceAccess`
+  registry factory (add a future resource with one loader + code — engine untouched).
+- **Error taxonomy** (`errors.ts`) — `AccessError` with codes `UNAUTHENTICATED` /
+  `FORBIDDEN` / `NOT_FOUND` / `INVALID_TENANT|WORKSPACE|PROJECT|WEBSITE`; tenant-hiding
+  (cross-tenant → `NOT_FOUND`), fail-closed status map, generic client messages.
+- **HTTP mapping** (`http.ts`) — `accessErrorResponse(err)` → consistent 401/403/404
+  (falls through to `serverError` for non-access errors).
+- Public barrel `index.ts` is the import surface (`@/lib/auth/access`).
+
+### Changed
+- `lib/auth/permissions/rbac.ts`: added `PERMISSIONS` + `permissionsFor(role)`.
+- `lib/auth/session.ts`: removed the ad-hoc `requireOrgPermission` (superseded by the
+  access layer) — session.ts is now membership **primitives** only. No duplication.
+
+### Tests
+- `tests/auth-access-engine.test.mjs` + `auth-access-errors.test.mjs` — isolation at
+  every depth (→ `NOT_FOUND`), unauthenticated/forbidden/missing, permission
+  inheritance, scoped-query generation, status mapping. **Suite 57/57 pass.**
+
+### Verification
+- `lint` · `type-check` · `test` (57/57) · `build` — all green; sitemap 66 preserved.
+
+## [Unreleased] — 0.7.0-alpha · SaaS Foundation (Phase 7.1)
+
+Adds the multi-tenant **authentication + database** foundation. Fully **additive** —
+no generation engine (AI, Website Builder, themes, industries, templates, SEO) was
+changed; routes/SEO/sitemap (66 URLs) are byte-preserved. Auth is isolated in
+`lib/auth/` + `lib/db/`; the generation engines contain zero auth logic.
+
+> **Resequence:** Auth/DB (previously "Phase 10" / `T-020`) was pulled forward as
+> **Phase 7.1** by explicit instruction; the Visual Builder becomes Phase 7.2.
+> See ADR-0007 (`.claude/decisions.md`).
+
+### Added — Authentication (Auth.js v5)
+- `next-auth@5.0.0-beta.31` with **JWT** sessions and an Edge/Node config split:
+  Edge-safe `lib/auth/config.ts` (→ `middleware.ts`), full Node `lib/auth/auth.ts`
+  (adapter + Credentials).
+- **Credentials** provider with **scrypt** password hashing (`lib/auth/password.ts`,
+  `node:crypto` — no native dep) + conditional **Google/GitHub** OAuth that self-disable
+  when their env secrets are absent (offline-safe).
+- Flows: `POST /api/auth/register`, Auth.js `[...nextauth]` (login/logout/OAuth/session),
+  **email verification** + **password reset** architecture (`verify-email`,
+  `forgot-password`, `reset-password`) with single-use hashed tokens
+  (`lib/auth/tokens.ts`) and a dev-log email seam (`lib/auth/email.ts`).
+- **RBAC** (`lib/auth/permissions/roles.ts` + `rbac.ts`), server session/tenant helpers
+  (`lib/auth/session.ts`), new-user auto-provisioning (`lib/auth/provisioning.ts`),
+  Zod schemas (`lib/auth/validation.ts`), and `middleware.ts` guarding reserved
+  `/dashboard` + `/app` routes. New public `auth` rate-limit bucket reuses the existing
+  `lib/api/security.ts` seam.
+
+### Added — Database (Prisma 6 + PostgreSQL)
+- `prisma/schema.prisma` — **14 models**: `User`, `Account`, `Session`,
+  `VerificationToken`, `PasswordResetToken`, `Organization`, `Workspace`,
+  `WorkspaceSettings`, `Membership`, `Team`, `TeamMembership`, `TeamInvitation`,
+  `Project`, `Website` (+ `Role`/`InvitationStatus`/`WebsiteStatus` enums). Ownership:
+  **Organization → Workspace → Project → Website**; `Website` is the canonical owner of
+  builder/theme/template/industry/AI/SEO artifacts (referenced by id/value).
+- `prisma/migrations/0001_init/migration.sql` (generated offline), `lib/db/prisma.ts`
+  hot-reload-safe client singleton, `docker-compose.yml` (Postgres 16 dev), and Neon
+  production guidance + auth env in `.env.example`. `package.json` gains `db:*` scripts
+  and a `postinstall: prisma generate` hook.
+
+### Changed
+- `tsconfig.json`: enabled `allowImportingTsExtensions` (valid under `noEmit`) so
+  `permissions/rbac.ts` can value-import `roles.ts` with an explicit `.ts` extension —
+  required by the Node type-stripping test runner (single-source hierarchy kept).
+
+### Tests
+- +4 zero-dependency `node --test` suites (`auth-password`, `auth-tokens`, `auth-rbac`,
+  `auth-validation`). Suite total **40/40 pass**.
+
+### Security hardening (post-review)
+- **H1 — Auth.js `trustHost`:** now configured via `AUTH_TRUST_HOST` (secure default —
+  trusted in dev/Vercel, explicit opt-in behind other proxies). Prevents `UntrustedHost`
+  sign-in failures in production. Documented in `.env.example`.
+- **M1 — enumeration-safe registration:** `POST /api/auth/register` returns an identical
+  generic success whether or not the email exists (collisions logged server-side only);
+  password is always hashed first so timing does not leak existence.
+
+### Verification
+- `npm run lint` · `type-check` · `test` (40/40) · `build` (exit 0) — all green offline.
+  Live DB migration (`docker compose up` → `npm run db:migrate`), OAuth secrets, and an
+  email provider are developer-run follow-ups.
+
+### Architecture review — ✅ Production Approved (2026-07-10)
+- Senior architecture + security + scalability review completed. Scores: Architecture 9 ·
+  **Production Readiness 9** · Security 9 · Scalability 6 · Maintainability 9 · Extensibility 9.
+  No Critical issues. Cleared for Phase 7.2. Tracked follow-ups: `T-035` tenant-access
+  guard (7.2 foundation), `T-036` apply/verify live migration, `T-032` shared rate-limit
+  store, `T-037`–`T-039`. See `.claude/decisions.md` ADR-0007.
+
+### Not included (future milestones)
+- Dashboard/login UI, billing, deployment providers, CRM, blog, admin, analytics,
+  media — and `Deployment`/`Domain` tables (deferred to the deployment milestone).
+
 ## [0.6.0] — Restructuring & Engineering Standards (Phase 6)
 
 Reorganizes the **implemented** code into a clean, enterprise-grade layout and

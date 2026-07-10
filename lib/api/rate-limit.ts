@@ -56,6 +56,11 @@ export const LIMITS = {
     limit: envInt('RATE_LIMIT_AI_WRITE', 10),
     windowMs: envInt('RATE_LIMIT_AI_WRITE_WINDOW_MS', 60_000),
   }),
+  /** Public auth endpoints (register / forgot-password / reset / verify). */
+  auth: (): RateLimitConfig => ({
+    limit: envInt('RATE_LIMIT_AUTH', 5),
+    windowMs: envInt('RATE_LIMIT_AUTH_WINDOW_MS', 60_000),
+  }),
 };
 
 /** Best-effort client identifier from proxy headers, falling back to a constant. */

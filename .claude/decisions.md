@@ -14,6 +14,39 @@
 | 0004 | Restructure existing code only; document (not scaffold) future modules | docs/decision-log.md |
 | 0005 | Conclude release/v0.6.0 → main as a merge commit for the v0.6.0 baseline | here |
 | 0006 | Add a `.claude/` AI Operating System (docs-only knowledge base) | here |
+| 0007 | Phase 7.1 SaaS foundation: Auth.js v5 + Prisma/Postgres + Org→Workspace→Project→Website | here |
+
+## ADR-0007 — Phase 7.1 SaaS foundation (2026-07-10)
+- **Decision:** build the multi-tenant SaaS foundation on **Auth.js v5**
+  (`next-auth@5.0.0-beta.31`) + **Prisma 6.19.3** / **PostgreSQL**, with **JWT
+  sessions**, a **Credentials** provider plus conditional **Google/GitHub** OAuth,
+  and the ownership hierarchy **Organization → Workspace → Project → Website**
+  (the `Website` row is the canonical owner of builder/theme/template/industry/AI/SEO
+  artifacts, referenced by id/value — never importing engine code).
+- **Resequencing:** the docs' roadmap placed Auth at "Phase 10"; per an explicit
+  user instruction it was pulled forward as **Phase 7.1**. History preserved — the
+  Visual Builder remains the later Phase-7 UI milestone (7.2+).
+- **Why:**
+  - *Auth.js v5* is App-Router-native (single `auth()` API, RSC/route/middleware
+    integration) and avoids a future v4→v5 migration.
+  - *Prisma 6, not 7:* `@auth/prisma-adapter@2.11.2` peer-supports `@prisma/client`
+    only through v6 — so "latest **compatible** stable" is 6.19.3.
+  - *JWT sessions:* the Credentials provider requires the JWT strategy; the `Session`
+    table is modeled for a future DB-session/OAuth-only switch.
+  - *scrypt (node:crypto):* password hashing with zero native dependency, reusing the
+    crypto approach already in `lib/api/security.ts`.
+  - *Edge/Node split:* an Edge-safe `lib/auth/config.ts` (JWT-only, no adapter) powers
+    middleware; the Node adapter + Credentials attach in `lib/auth/auth.ts`.
+- **Alternatives:** NextAuth v4 (not App-Router-native); bcrypt/argon2 (native dep);
+  database sessions now (incompatible with Credentials); Organization-only tenancy
+  (no room for the Website-as-artifact-owner model).
+- **Trade-offs:** Auth.js v5 is a stable beta; `middleware` importing `next-auth`
+  emits harmless `jose` Edge warnings (CompressionStream) at build; `allowImportingTsExtensions`
+  was enabled so `permissions/rbac.ts` can value-import `roles.ts` with an explicit
+  `.ts` extension (needed by the Node type-stripping test runner). A live DB migration
+  is developer-run (Docker/Neon) — the repo ships schema + generated migration SQL +
+  `prisma generate`, keeping all four gates green offline. Deployment/Domain tables
+  deferred to the deployment milestone. Accepted.
 
 ## ADR-0005 — v0.6.0 baseline via merge commit (2026-07-10)
 - **Decision:** conclude the in-progress `release/v0.6.0` → `main` merge as the

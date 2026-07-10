@@ -5,6 +5,8 @@ import { buildRootMetadata } from '@/lib/seo/metadata';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { StickyCallButton } from '@/components/layout/StickyCallButton';
+import { SiteChrome } from '@/components/layout/SiteChrome';
+import { THEME_INIT_SCRIPT } from '@/components/theme/theme';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { getCities, getServices, paths } from '@/lib/generator/config';
 import {
@@ -45,14 +47,22 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply saved light/dark theme before paint (no flash). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="flex min-h-dvh flex-col pb-safe-mobile">
         {/* Brand theming injected from the business config. */}
         <style dangerouslySetInnerHTML={{ __html: brandCss() }} />
         <JsonLd data={siteGraph} />
-        <Header config={business} services={services} cities={cities} />
-        <main className="flex-1">{children}</main>
-        <Footer config={business} services={services} cities={cities} />
-        <StickyCallButton phone={business.phone} />
+        {/* Marketing chrome on public routes; auth/app routes render bare. */}
+        <SiteChrome
+          header={<Header config={business} services={services} cities={cities} />}
+          footer={<Footer config={business} services={services} cities={cities} />}
+          sticky={<StickyCallButton phone={business.phone} />}
+        >
+          {children}
+        </SiteChrome>
       </body>
     </html>
   );

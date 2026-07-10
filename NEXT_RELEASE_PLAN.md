@@ -10,22 +10,33 @@ Complexity: **S** (small, days) · **M** (medium, 1–2 wks) · **L** (large, 3�
 
 ---
 
-## Phase 7 — Visual Builder
-- **Objectives:** promote the proven block/theme engine into a live editing
-  surface — drag-order blocks, edit block props, switch theme/template, preview,
-  and persist a `PageDefinition`. Adopt `BlockRenderer` on production routes so
-  the whole site is block-driven, not just `/preview`.
-- **Dependencies:** existing `lib/builder`, `themes/`, `industries/`,
-  `components/blocks` (all implemented); persistence needs a datastore (or JSON
-  export first).
-- **Complexity:** L
-- **Risks:** editor state ↔ SSR hydration; SEO parity when routes move to
-  `BlockRenderer` (must keep sitemap/metadata/JSON-LD byte-identical); scope creep
-  toward a full CMS.
-- **Deliverables:** editor UI (`app/(builder)/…`, `components/builder/editor/`),
-  block prop schemas, save/load `PageDefinition`, route adoption behind a flag.
-- **Success criteria:** a non-developer edits and previews a page; production
-  routes render via `BlockRenderer` with routes/SEO unchanged; all gates green.
+## Phase 7 — SaaS Foundation + Visual Builder
+> **Resequenced (2026-07-10):** Auth/multi-tenancy (was "Phase 10") shipped first as
+> **Phase 7.1**; the Visual Builder is now **Phase 7.2**. Milestone map lives in
+> [`.claude/roadmap.md`](.claude/roadmap.md) (§ v0.7); ADR-0007 in `.claude/decisions.md`.
+
+### Phase 7.1 — SaaS Foundation ✅ Production Approved (0.7.0-alpha)
+Auth.js v5 (Credentials + Google/GitHub, JWT) · Prisma 6/PostgreSQL · multi-tenancy
+`Organization → Workspace → Project → Website` · RBAC · register/verify/reset APIs ·
+middleware guard · Docker/Neon. Architecture review passed (Production Readiness 9/10).
+
+### Phase 7.2 — Authenticated product surface + Visual Builder ⏳ (approved plan)
+Build sub-milestones in order; **verify (`lint`→`type-check`→`test`→`build`) + stop +
+present after each**; no auto-continue.
+- **7.2.0 Tenant Access Guard** — mandatory scoped data-access layer + auth error→HTTP
+  mapping; the foundation every resource query routes through (`T-035`).
+- **7.2.1 Authentication UI** — login/register/forgot/reset/verify pages over 7.1 APIs.
+- **7.2.2 Dashboard Foundation** — shell first (layout, sidebar, header, user menu, org +
+  workspace switchers, breadcrumbs, settings nav) → then Workspace/Project/Website CRUD,
+  all via the guard.
+- **7.2.3 Website Manager** — dedicated Website **management** (fields + create/duplicate/
+  archive/delete/open-builder). Distinct from the editor.
+- **7.2.4 Visual Builder** — the **editor** on the existing Theme/Template/Industry/Block/
+  Preview engines; persists to `Website.builderConfig`; no second builder format.
+- **7.2.5 Production Route Adoption** — adopt `BlockRenderer` behind the flag only after
+  metadata/JSON-LD/sitemap/route/SEO **parity** is verified byte-identical.
+- **Complexity:** L. **Risks:** editor SSR/hydration; SEO parity on adoption (flag +
+  byte-diff gate); CMS scope creep (bound each sub-milestone to its gate).
 
 ## Phase 8 — Blog Engine (pages)
 - **Objectives:** publish already-generated blog content as real routes — article,

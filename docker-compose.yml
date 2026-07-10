@@ -1,0 +1,32 @@
+# Local development database for Phase 7.1 (Auth + multi-tenancy).
+# Production uses Neon (see .env.example / prisma/schema.prisma) — this file is
+# for local dev only.
+#
+#   npm run db:up        # start Postgres in the background
+#   npm run db:migrate   # apply migrations (prisma migrate dev)
+#   npm run db:down      # stop and remove the container
+#
+# Matches the default DATABASE_URL in .env.example:
+#   postgresql://postgres:postgres@localhost:5432/leadgen?schema=public
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: leadgen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: leadgen
+    ports:
+      - '5432:5432'
+    volumes:
+      - leadgen_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d leadgen']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  leadgen_pgdata:

@@ -3,33 +3,81 @@
 > Update this file at the end of every coding session so the next session resumes cleanly.
 
 ## Build status
-- **Last action:** Phase 6 — Restructuring & Engineering Standards. Reorganized
-  **implemented** code into the enterprise layout and **documented** (did not
-  scaffold) future modules. Moves via `git mv` (history preserved):
-  `lib/builder/themes`→`themes/`, `lib/builder/industries`→`industries/`,
-  `components/JsonLd.tsx`→`components/seo/`, `components/site/LeadForm.tsx`→
-  `components/forms/`. Added `docs/`, `.github/` (CI + templates), `.ai/`, and
-  root `ARCHITECTURE.md`. No behavior change.
-- **Build verified?** ✅ Yes (Node v22.22.3 / Next.js 15.5.20):
-  - `npm run lint` / `npm run type-check` / `npm test` (17/17) / `npm run build`
-    → all clean; **83 routes**. Sitemap (66 URLs) + prerendered route table (71)
-    verified **byte-identical** to the pre-restructure baseline (SEO preserved).
-- **Restructure is behavior-preserving** — no routes, SEO, AI rendering, or tests
-  changed; only file locations + import aliases + documentation.
+- **Last action:** **Phase 7.1 — SaaS Foundation (Auth + DB + Multi-tenancy)**.
+  Added **Auth.js v5** (Credentials + scrypt, conditional Google/GitHub, JWT sessions),
+  **Prisma 6 / PostgreSQL** (`prisma/schema.prisma`, 14 models + initial migration),
+  **Docker** dev DB + **Neon** production docs, RBAC, ownership hierarchy
+  **Organization → Workspace → Project → Website**, register/verify/reset APIs,
+  middleware route guard, and new-user auto-provisioning. Isolated in `lib/auth/` +
+  `lib/db/`; **no generation-engine code changed**. Resequenced ahead of the Visual
+  Builder (now Phase 7.2) by explicit instruction — see ADR-0007.
+- **Build verified?** ✅ Yes (Node v22.22.3 / Next.js 15 / Auth.js 5.0.0-beta.31 /
+  Prisma 6.19.3):
+  - `npm run lint` / `npm run type-check` / `npm test` (**40/40**) / `npm run build`
+    → all green. 5 new `/api/auth/*` dynamic routes + `Middleware`; **sitemap 66 URLs
+    preserved** (SEO invariant intact).
+- **Additive & backward-compatible** — generation engines (AI, Builder, themes,
+  industries, templates, SEO) untouched; auth carries zero engine coupling.
+- **Architecture review → ✅ Production Approved (2026-07-10).** Scores: Architecture 9 /
+  **Production Readiness 9** / Security 9 / Scalability 6 / Maintainability 9 /
+  Extensibility 9. Post-review hardening: **H1** Auth.js `trustHost` (`AUTH_TRUST_HOST`)
+  + **M1** enumeration-safe registration. No Critical issues; cleared for Phase 7.2.
+  Follow-ups tracked as `T-035`–`T-039` / `T-032` (`.claude/tasks.md`).
+- **Phase 7.2.0 — Authorization & Tenant Access Foundation (2026-07-10).** Added
+  `lib/auth/access/` — the centralized, registry-extensible authorization layer
+  (`require*Access` + `*Scope` + `AccessError`/HTTP mapping) with a pure, fully-tested
+  decision core; removed the duplicate `requireOrgPermission`. Gates green (test 57/57),
+  sitemap 66 preserved. The single supported path to tenant resources (`T-035` done).
+- **Phase 7.2.1 — Authentication Experience (2026-07-10).** Full auth UI over the 7.1
+  APIs: `app/(auth)/` pages (login/register/forgot/reset/verify/logout/invitations) +
+  `AuthLayout`, `components/auth/*`, dependency-free toast + dark mode, `SiteChrome`
+  (marketing chrome hidden on app routes, SSR unchanged), `POST /api/auth/accept-invitation`.
+  Google/GitHub (when configured), remember-me, a11y, open-redirect-safe. Gates green
+  (test 63/63), sitemap 66 preserved, marketing routes unchanged.
+- **Phase 7.2.2 — Dashboard Foundation (2026-07-10).** The permanent app shell:
+  `components/dashboard/` (`DashboardLayout`/`Shell` responsive sidebar+drawer+header,
+  config-driven `SidebarNav`, breadcrumbs, org/workspace switchers, user menu), a suite of
+  generic `components/ui/*` primitives (dropdown, modal/drawer, confirm-dialog, data-table,
+  stat-card, empty-state, page-header, action-menu, search-input, filter-bar, pagination,
+  skeleton, loading-overlay, error-boundary), `lib/dashboard/` (nav/context/switch-actions),
+  and `app/dashboard/` home + 10 placeholder routes. Switchers validate membership via the
+  tenant-access layer. Gates green (test 63/63), sitemap 66 preserved, home static.
+- **Phase 7.2.3 — Website Manager (2026-07-10).** Create/organize/manage websites (not
+  content editing). `Website` is the central aggregate (schema extended: language/timezone/
+  businessConfig/archivedAt, migration 0002). `lib/websites/` service routes **every op
+  through the tenant-access layer**; pure `schema`/`status` tested. UI: filterable list +
+  actions (rename/duplicate/archive/restore/delete), 6-step creation **wizard (config only)**,
+  website-detail shell with config-driven tabs (Overview + Settings live; 9 placeholders).
+  Gates green (test 73/73), sitemap 66 preserved, home static.
+- **Dashboard Redesign (2026-07-10).** Reuse-first product-quality pass on the existing
+  design system: action-oriented home, **command palette (⌘K)** with tenant-scoped search
+  (`lib/search/`), Settings split into 11 sections, full Website Manager action set, wizard
+  entry modes (Manual/Import/Google Business Profile), and Deployment/Domain UI shells
+  (no logic). No new deps; no auth/model changes. Gates green (test **76/76**);
+  **SEO/sitemap(66)/JSON-LD(4 home blocks) unchanged**.
+  **Next: 7.2.4 AI Website Generator — awaiting approval.**
+- **Developer follow-ups (not runnable in CI/offline):** `docker compose up -d db`
+  (or Neon) → `npm run db:migrate` to apply the schema; set `AUTH_SECRET` + OAuth
+  secrets; wire an email provider in `lib/auth/email.ts`.
 - **Re-verify commands:**
   ```bash
-  npm install
-  npm run typecheck
+  npm install               # runs postinstall: prisma generate
+  npm run type-check
   npm run lint
   npm test
   npm run build
+  # Optional live DB: npm run db:up && npm run db:migrate
   npm run dev   # http://localhost:3000
   ```
   Set `NEXT_PUBLIC_SITE_URL` to your public https origin for a real build; the
   demo warns (does not fail) on a localhost origin.
 
 ## Current milestone
-Website Builder — **complete**. Any business → themed, JSON/block-driven site.
+Phase 7.1 SaaS Foundation — **complete** (auth + database + multi-tenant ownership).
+Next: **Phase 7.2 Visual Builder** (dashboard/editor UI atop this foundation).
+
+### Previous milestone — Website Builder (complete)
+Any business → themed, JSON/block-driven site.
 
 ### Website Builder (this milestone — `lib/builder/`, `templates/`, `components/blocks/`)
 - `types.ts` builder contracts; `themes/` 8 CSS-variable themes + `ThemeProvider`.

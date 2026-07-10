@@ -22,7 +22,9 @@ Config-driven, provider-agnostic, offline-safe. Built to become a multi-tenant S
 - **Repository:** https://github.com/askamrendar/lead-generator-website
 - **Current version:** v0.6.0 (Enterprise Architecture Release)
 - **Stack:** Next.js 15 (App Router) · React 19 · TypeScript (strict) · Tailwind 3 · Zod · Node 22
-- **No database yet** — deterministic content is the offline baseline; AI is optional.
+  · **Auth.js v5** + **Prisma 6 / PostgreSQL** (Phase 7.1 SaaS foundation).
+- **Database is optional for generation** — the deterministic content engine still builds
+  fully offline with zero env vars; the DB backs auth/tenancy (Docker dev · Neon prod).
 
 ## Architecture (summary — full detail in `ARCHITECTURE.md` + `.claude/architecture.md`)
 
@@ -47,7 +49,10 @@ Full folder explanations: `ARCHITECTURE.md` §1.2 and `.claude/architecture.md`.
 
 - **Completed:** Generator Core → Nationwide SEO → AI Content Engine → AI Rendering
   → Website Builder → Production Hardening (v0.5.1) → Enterprise Restructure (v0.6.0).
-- **Current:** **Phase 7 — Visual Builder** (branch `feature/phase-7-visual-builder`; not yet started).
+- **Completed (7.1) — ✅ Production Approved:** SaaS Foundation — Auth.js v5 +
+  Prisma/Postgres + multi-tenancy (`lib/auth/`, `lib/db/`, `prisma/`). Resequenced ahead
+  of the Visual Builder; passed architecture review (PR 9/10); ADR-0007.
+- **Current:** **Phase 7.2 — Visual Builder** (branch `feature/phase-7-visual-builder`; not yet started).
 - **Next:** see `.claude/roadmap.md` / `NEXT_RELEASE_PLAN.md`.
 
 Detail: `.claude/progress.md`, `CHANGELOG.md`.
@@ -64,6 +69,16 @@ Detail: `.claude/progress.md`, `CHANGELOG.md`.
 | `lib/builder/` + `themes/` + `industries/` + `templates/` | Website Builder engine |
 | `lib/seo/` + `components/seo/JsonLd.tsx` | Metadata + JSON-LD |
 | `lib/api/security.ts` | Admin auth, rate-limit enforce, `serverError` |
+| `lib/auth/` + `lib/db/prisma.ts` | Auth.js v5 + Prisma client — SaaS foundation (Phase 7.1) |
+| `lib/auth/access/` | Centralized tenant authorization — the ONLY way to access tenant resources (7.2.0) |
+| `app/(auth)/` + `components/auth/` | Authentication UI (login/register/reset/verify/invite) — 7.2.1 |
+| `app/dashboard/` + `components/dashboard/` | Authenticated app shell — every module mounts here (7.2.2) |
+| `lib/websites/service.ts` | Website CRUD — the ONLY read/write path, routed through tenant-access (7.2.3) |
+| `lib/search/` + `components/dashboard/CommandPalette.tsx` | Global ⌘K search (extensible; tenant-scoped) |
+| `lib/dashboard/nav.ts` + `lib/dashboard/settings-nav.ts` + `lib/websites/nav.ts` | Config-driven nav — register modules/tabs/settings here |
+| `components/ui/*` | Generic primitives (dropdown, modal, data-table, stat-card, …) reused everywhere |
+| `components/layout/SiteChrome.tsx` | Hides marketing chrome on app routes (marketing SSR unchanged) |
+| `prisma/schema.prisma` | DB models; ownership `Organization → Workspace → Project → Website` |
 
 ## How Claude should work here
 

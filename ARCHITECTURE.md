@@ -54,6 +54,12 @@ lib/
   ai/           providers · prompts · cache (+ freshness) · services · agents ·
                 render · validation · versioning · generation · context · hash · config
   api/          security (admin auth, rate-limit enforce, serverError), rate-limit
+  auth/         Auth.js v5 (config/auth/middleware/session/providers) · password (scrypt) ·
+                tokens · validation · provisioning · email seam · permissions (roles/rbac)
+    access/     centralized tenant authorization (7.2.0): engine (pure) · errors ·
+                context · resolver (require*Access registry) · http mapping — the ONLY
+                supported way to read a tenant resource
+  db/           prisma.ts (PrismaClient singleton)
   builder/      types · blocks · compose · select · context · registry
   generator/    config (geo taxonomy, paths) · content · links · schema
   seo/          metadata · schema
@@ -65,8 +71,11 @@ themes/         8 CSS-variable themes + ThemeProvider tokens     ← Phase 6 (fr
 industries/     5 industry packs                                  ← Phase 6 (from lib/builder)
 templates/      base · plumber · hvac · generic (JSON layouts) + registry
 data/           business.ts (sample: Apex Plumbing Co.)
+prisma/         schema.prisma (auth + tenancy models) + migrations       ← Phase 7.1
+middleware.ts   Edge auth guard for reserved authed routes               ← Phase 7.1
+docker-compose.yml  local Postgres dev DB (Neon in prod)                 ← Phase 7.1
 scripts/        pregenerate.mjs
-tests/          node --test suites (lead, rate-limit, site, cache-freshness)
+tests/          node --test suites (generation + auth + access; 57 cases)
 docs/           deep-dive docs + decision log
 .github/        CI workflow + issue/PR templates
 .ai/            agent working memory (pointers + logs)

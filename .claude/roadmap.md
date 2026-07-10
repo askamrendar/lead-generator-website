@@ -8,15 +8,38 @@
 Clean, documented, production-hardened generation platform. Future modules
 documented, not scaffolded.
 
-## v0.7 — Visual Builder + Blog
-- **Features:** live block editor (drag-order, prop edit, theme/template switch,
-  preview, persist `PageDefinition`); adopt `BlockRenderer` on production routes;
-  **Blog pages** (article/category/tag/RSS) on existing generators.
-- **Goals:** the builder becomes the real rendering path; content marketing surface.
-- **Risks:** SSR/hydration for the editor; SEO parity when routes move to
-  `BlockRenderer` (keep sitemap/metadata/JSON-LD identical); thin-content risk on blog.
-- **Dependencies:** builder engine (done); persistence (JSON export first).
-- **Timeline:** first post-baseline release.
+## v0.7 — SaaS Foundation + Visual Builder
+> **Resequenced (2026-07-10):** Auth + multi-tenancy (originally slated for v0.9) was
+> pulled forward as **Phase 7.1** by explicit instruction; the Visual Builder became
+> **Phase 7.2**. History preserved — see ADR-0007 and `.claude/progress.md`.
+
+### Phase 7.1 — SaaS Foundation ✅ Production Approved (0.7.0-alpha)
+Auth.js v5 (Credentials + Google/GitHub, JWT) · Prisma 6 / PostgreSQL · multi-tenancy
+`Organization → Workspace → Project → Website` · RBAC · register/verify/reset APIs ·
+middleware guard · Docker dev DB / Neon prod. Architecture review passed (PR 9/10).
+
+### Phase 7.2 — Authenticated product surface + Visual Builder ⏳
+Ordered sub-milestones (build one at a time; **verify + stop + present** after each;
+no auto-continue):
+- **7.2.0 — Tenant Access Guard:** mandatory scoped data-access layer (`requireWorkspaceAccess`
+  / `requireProjectAccess` / `requireWebsiteAccess`) + auth error→HTTP mapping. Foundation
+  for every resource query (review finding H2 / `T-035`). Built **before** any CRUD.
+- **7.2.1 — Authentication UI:** login / register / forgot / reset / verify pages over the
+  existing 7.1 APIs.
+- **7.2.2 — Dashboard Foundation:** dashboard **shell first** (layout, sidebar, header, user
+  menu, org switcher, workspace switcher, breadcrumbs, settings nav), **then** CRUD for
+  Workspace / Project / Website — every operation via the 7.2.0 guard.
+- **7.2.3 — Website Manager:** dedicated Website **management** surface (name, slug, industry,
+  theme, template, status, created/updated; actions: create, duplicate, archive, delete,
+  open builder). Manages Websites — distinct responsibility from the editor.
+- **7.2.4 — Visual Builder:** the **editor**, built on the existing Theme/Template/Industry/
+  Block/Preview engines; persists to `Website.builderConfig`. No second builder format. The
+  Website Manager manages; the Visual Builder edits — responsibilities kept separate.
+- **7.2.5 — Production Route Adoption:** adopt `BlockRenderer` on production routes behind the
+  feature flag only after metadata / JSON-LD / sitemap / route / SEO **parity** is verified.
+- **Risks:** editor SSR/hydration; SEO parity on route adoption (flag + byte-diff gate);
+  CMS scope creep (bound each sub-milestone to its gate).
+- **Blog pages** (article/category/tag/RSS) move to a later phase (were bundled here before).
 
 ## v0.8 — Media + CRM + Logging
 - **Features:** real image generation + storage (`lib/media/`, `public/`); lead
@@ -26,12 +49,13 @@ documented, not scaffolded.
 - **Risks:** generation cost/latency, storage/licensing, log volume/PII.
 - **Dependencies:** a datastore (CRM), image provider/storage.
 
-## v0.9 — Auth + Multi-tenancy + Dashboard
-- **Features:** accounts/orgs/RBAC + database (Prisma + Postgres); tenant scoping;
-  customer dashboard (config CRUD, regenerate, preview, lead inbox).
-- **Goals:** the SaaS foundation — everything below depends on it.
-- **Risks:** session/security correctness; tenant isolation; first DB/migration ops.
-- **Dependencies:** none upstream (this is the critical-path unlock).
+## v0.9 — (superseded) Auth + Multi-tenancy + Dashboard
+> **Resequenced:** the Auth + multi-tenancy foundation shipped early as **Phase 7.1**
+> (see v0.7 above); the customer **dashboard** is now **Phase 7.2** (7.2.2–7.2.3). This
+> slot is retained for history. Remaining original scope (config regenerate, lead inbox)
+> folds into 7.2 / v0.8 CRM.
+- **Delivered early (7.1):** accounts/orgs/RBAC + Prisma/Postgres + tenant model.
+- **Now in 7.2:** dashboard, workspace/project/website CRUD, website manager, builder.
 
 ## v1.0 — Monetized SaaS (Billing + Deployment + Analytics + Admin)
 - **Features:** subscriptions + usage credits (meter AI); one-click deploy + custom

@@ -1,0 +1,293 @@
+// Prisma schema — Phase 7.1 Enterprise SaaS Foundation.
+//
+// Scope: authentication (Auth.js v5) + multi-tenant ownership only. The generation
+// engines (AI, Website Builder, themes, industries, templates, SEO) are NOT modeled
+// here — the `Website` row references their artifacts by id/value and never imports
+// engine code, keeping auth/tenancy fully decoupled from the builder.
+//
+// Ownership hierarchy: Organization → Workspace → Project → Website.
+//
+// Local dev DB: `docker compose up -d db` (see docker-compose.yml).
+// Production: Neon (set DATABASE_URL to the pooled URL, DIRECT_URL to the direct URL).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used for migrations on Neon; falls back to
+  // DATABASE_URL locally. Safe to point at the same URL for Docker Postgres.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+/// Organization/team role. Hierarchy (high→low): OWNER > ADMIN > MEMBER > VIEWER.
+/// Mirrored as pure logic in lib/auth/permissions/roles.ts (single source for checks).
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum WebsiteStatus {
+  DRAFT
+  GENERATED
+  PUBLISHED
+  ARCHIVED
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js core models (@auth/prisma-adapter contract)
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  /// Present only for Credentials sign-in; null for pure-OAuth users. scrypt hash.
+  hashedPassword String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  memberships         Membership[]
+  teamMemberships     TeamMembership[]
+  ownedProjects       Project[]            @relation("ProjectOwner")
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Modeled for future database-session strategy and adapter completeness.
+/// Phase 7.1 uses the JWT strategy, so this table is unused at runtime today.
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Auth.js verification tokens — reused here for the email-verification flow.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+/// Custom: password-reset tokens (single-use, expiring).
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// SaaS multi-tenancy — Organization → Workspace → Project → Website
+// ---------------------------------------------------------------------------
+
+/// Tenant root. Every user gets a personal Organization on first sign-up.
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  workspaces  Workspace[]
+  teams       Team[]
+  invitations TeamInvitation[]
+}
+
+/// Org-level RBAC edge: a user's role within an organization.
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role     @default(MEMBER)
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+/// Container owned by an Organization; holds Projects. Default workspace on sign-up.
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  settings     WorkspaceSettings?
+  projects     Project[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+/// Per-workspace configuration. `branding`/`metadata` are open JSON for forward-compat.
+model WorkspaceSettings {
+  id            String  @id @default(cuid())
+  workspaceId   String  @unique
+  defaultLocale String  @default("en-US")
+  timezone      String  @default("UTC")
+  branding      Json?
+  metadata      Json?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  name           String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMembership[]
+  invitations  TeamInvitation[]
+
+  @@index([organizationId])
+}
+
+model TeamMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+}
+
+/// Email invitation to join a team (and its organization) with a target role.
+model TeamInvitation {
+  id             String           @id @default(cuid())
+  email          String
+  organizationId String
+  teamId         String?
+  role           Role             @default(MEMBER)
+  token          String           @unique
+  status         InvitationStatus @default(PENDING)
+  expires        DateTime
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team         Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+/// Ownership record inside a Workspace; owns one or more Websites.
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String
+  workspaceId String
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation("ProjectOwner", fields: [ownerId], references: [id])
+  websites  Website[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([ownerId])
+}
+
+/// Canonical owner of a generated site. References engine artifacts by id/value
+/// (theme/template/industry ids, builder + SEO config snapshots) — it never imports
+/// engine code, so the AI/Builder/SEO engines remain fully decoupled. Future
+/// deployment configuration will attach here (no deployment tables in Phase 7.1).
+model Website {
+  id               String        @id @default(cuid())
+  name             String
+  slug             String
+  projectId        String
+  language         String        @default("en-US")
+  timezone         String        @default("UTC")
+  themeId          String?
+  templateId       String?
+  industryId       String?
+  /// Wizard-collected business information (name/category/services/location/brand/
+  /// details/SEO). The single home for a website's business config — the central
+  /// aggregate; other modules read it, none duplicate it.
+  businessConfig   Json?
+  /// BusinessConfig snapshot / PageDefinition set produced by the Website Builder.
+  builderConfig    Json?
+  /// SEO engine configuration snapshot (metadata/JSON-LD inputs).
+  seoConfig        Json?
+  /// Version/hash of the AI content bound to this website (see lib/ai/versioning).
+  aiContentVersion String?
+  generatedAt      DateTime?
+  status           WebsiteStatus @default(DRAFT)
+  archivedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+  @@index([projectId, status])
+}
