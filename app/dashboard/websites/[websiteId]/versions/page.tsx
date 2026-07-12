@@ -1,13 +1,13 @@
-import { History } from 'lucide-react';
-import { WebsitePlaceholder } from '@/components/websites/WebsitePlaceholder';
+import { listRevisions } from '@/lib/productivity/service';
+import { VersionHistory } from '@/components/productivity/VersionHistory';
 
-export default function WebsiteVersionsPage() {
-  return (
-    <WebsitePlaceholder
-      title="Versions"
-      description="Version history for this website — restore, compare, and roll back."
-      icon={History}
-      phase="9.5"
-    />
-  );
+/**
+ * Website Versions tab (Phase 9). Manual snapshots + restore of the builder/business
+ * config, via the tenant-access-guarded productivity service. No duplicate storage —
+ * revisions live on `Website.revisions`.
+ */
+export default async function WebsiteVersionsPage({ params }: { params: Promise<{ websiteId: string }> }) {
+  const { websiteId } = await params;
+  const revisions = await listRevisions(websiteId);
+  return <VersionHistory websiteId={websiteId} revisions={revisions} />;
 }

@@ -1,5 +1,8 @@
 # Project — Vision, Mission, Business
 
+> This file supplements **`PROJECT_MEMORY.md`**. `PROJECT_MEMORY.md` (project root) is the
+> canonical project memory — read it first.
+
 ## Vision
 Make a professional, SEO-dominant local-business website a **one-config** artifact:
 any local service business gets a complete, structured, lead-generating site — and,

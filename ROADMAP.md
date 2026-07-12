@@ -118,3 +118,30 @@ a clean enterprise layout; future modules are documented, not scaffolded.
 Recommended order (value ÷ dependency): **Logging → Blog pages → CRM delivery →
 Media → Auth →** Dashboard → Admin → Billing → Deployment → Analytics.
 See `ARCHITECTURE.md` §4 and `PROJECT_MANIFEST.md`.
+
+---
+
+## 2026-07-12 — Release-Candidate status (supersedes the phase list above)
+
+> The phase list above reflects the *original* plan (frozen at Phase 6). The project has
+> since advanced through Phases 7–10. The canonical, up-to-date roadmap + history lives in
+> `PROJECT_MEMORY.md` (§8 Roadmap, §18 Milestone Log). This section is the current summary.
+
+**Shipped & gate-verified:** Auth · multi-tenancy + RBAC + tenant-access · dashboard shell +
+⌘K · Website Manager/Workspace · Visual Builder · Deployment Engine (**async via job queue**,
+ZIP + gated cloud) · Domain Manager (DNS) · Media Library (local-fs) · AI Blog Generator ·
+Analytics (internal) · Background Jobs (durable queue + **stuck-job reaper**) · Single-User
+Productivity (Phase 9) · **AI Website Generator** · **Secret encryption at rest (fail-closed
+in prod)**.
+
+**Current state:** all six quality gates GREEN (test **136/136**, sitemap 66). Single-user SaaS
+(Team collaboration permanently removed; Org/Workspace/Membership kept as the tenant spine).
+Full 6-dimension production audit complete (2026-07-12) with code-only Critical/High fixes applied
+— see `PROJECT_MEMORY.md` §18 and `TODO.md` for the prioritized remaining tech-debt list.
+
+**To reach a deployable RC — remaining (see `TODO.md` for the checklist):**
+- Code-only (audit-derived, none block the RC): integration/E2E tests · `toJson<T>()` + Zod-on-read
+  for JSON blobs · `SKIP LOCKED` queue claim · batch bulk-enqueue · dedupe helpers · misc a11y/perf polish.
+- Externally blocked (need creds/infra): object storage keys · one cloud-deploy provider token ·
+  live AI keys · a running worker (cron) · Redis (distributed rate-limit/event-bus) · GA4/GSC OAuth.
+- Policy-deferred: Billing.

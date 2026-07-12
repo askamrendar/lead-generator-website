@@ -43,13 +43,26 @@ export function SiteChrome({
   const pathname = usePathname() ?? '/';
 
   if (isBareRoute(pathname)) {
-    return <main className="flex-1">{children}</main>;
+    return (
+      <main id="main" className="flex-1">
+        {children}
+      </main>
+    );
   }
 
   return (
     <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
       {header}
-      <main className="flex-1">{children}</main>
+      {/* pb-16 clears the mobile sticky call bar so it doesn't overlay footer content. */}
+      <main id="main" className="flex-1 pb-16 md:pb-0">
+        {children}
+      </main>
       {footer}
       {sticky}
     </>

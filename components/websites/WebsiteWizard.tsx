@@ -190,7 +190,7 @@ function Stepper({ step }: { step: number }) {
         const done = i < step;
         const active = i === step;
         return (
-          <li key={title} className="flex items-center gap-2">
+          <li key={title} className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
             <span
               className={cn(
                 'flex size-6 items-center justify-center rounded-full text-xs font-semibold',
@@ -199,7 +199,10 @@ function Stepper({ step }: { step: number }) {
             >
               {done ? <Check className="size-3.5" aria-hidden /> : i + 1}
             </span>
-            <span className={cn(active ? 'font-medium text-foreground' : 'text-muted-fg')}>{title}</span>
+            <span className={cn(active ? 'font-medium text-foreground' : 'text-muted-fg')}>
+              {title}
+              {active ? <span className="sr-only"> (current step)</span> : null}
+            </span>
             {i < STEP_TITLES.length - 1 ? <span className="mx-1 text-border">/</span> : null}
           </li>
         );

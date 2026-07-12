@@ -6,10 +6,16 @@ import {
   Rocket,
   Link2,
   Image,
-  Users,
   KeyRound,
   Settings,
   HelpCircle,
+  BarChart3,
+  Activity,
+  Bell,
+  Star,
+  Trash2,
+  SlidersHorizontal,
+  ListChecks,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -43,8 +49,16 @@ export const DASHBOARD_NAV: NavSection[] = [
     title: 'Build',
     items: [
       { label: 'Websites', href: '/dashboard/websites', icon: Globe, status: 'soon', phase: '7.2.3' },
-      { label: 'Templates', href: '/dashboard/templates', icon: LayoutTemplate, status: 'soon', phase: '7.2.3' },
+      { label: 'Templates', href: '/dashboard/templates', icon: LayoutTemplate, status: 'ready' },
       { label: 'AI Generator', href: '/dashboard/ai-generator', icon: Sparkles, status: 'soon', phase: '7.2.4' },
+    ],
+  },
+  {
+    title: 'Workspace',
+    items: [
+      { label: 'Favorites', href: '/dashboard/favorites', icon: Star, status: 'ready' },
+      { label: 'Prompt Library', href: '/dashboard/prompts', icon: Sparkles, status: 'ready' },
+      { label: 'Trash', href: '/dashboard/trash', icon: Trash2, status: 'ready' },
     ],
   },
   {
@@ -57,19 +71,28 @@ export const DASHBOARD_NAV: NavSection[] = [
   {
     title: 'Assets',
     items: [
-      { label: 'Media Library', href: '/dashboard/media', icon: Image, status: 'soon', phase: '8.6' },
+      { label: 'Media Library', href: '/dashboard/media', icon: Image, status: 'ready' },
+    ],
+  },
+  {
+    title: 'Insights',
+    items: [
+      { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, status: 'ready' },
+      { label: 'Task Center', href: '/dashboard/tasks', icon: ListChecks, status: 'ready' },
+      { label: 'Background Jobs', href: '/dashboard/jobs', icon: Activity, status: 'ready' },
+      { label: 'Notifications', href: '/dashboard/notifications', icon: Bell, status: 'ready' },
     ],
   },
   {
     title: 'Organization',
     items: [
-      { label: 'Team', href: '/dashboard/team', icon: Users, status: 'soon', phase: '9' },
-      { label: 'API Keys', href: '/dashboard/api-keys', icon: KeyRound, status: 'soon', phase: 'later' },
+      { label: 'API Keys', href: '/dashboard/api-keys', icon: KeyRound, status: 'soon', phase: '10' },
     ],
   },
   {
     title: 'System',
     items: [
+      { label: 'Preferences', href: '/dashboard/preferences', icon: SlidersHorizontal, status: 'ready' },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings, status: 'soon', phase: '7.2.2+' },
       { label: 'Help', href: '/dashboard/help', icon: HelpCircle, status: 'ready' },
     ],

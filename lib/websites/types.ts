@@ -5,7 +5,7 @@ import type { WebsiteWizardInput } from '@/lib/websites/schema';
  * client raw; the service maps to these plain shapes.
  */
 
-export type WebsiteStatus = 'DRAFT' | 'GENERATED' | 'PUBLISHED' | 'ARCHIVED';
+export type WebsiteStatus = 'DRAFT' | 'GENERATED' | 'PUBLISHED' | 'ARCHIVED' | 'TRASHED';
 
 /** The wizard-collected business configuration, stored on `Website.businessConfig`. */
 export type WebsiteBusinessConfig = WebsiteWizardInput;
@@ -23,6 +23,10 @@ export interface WebsiteSummary {
   timezone: string;
   generatedAt: string | null;
   archivedAt: string | null;
+  trashedAt: string | null;
+  pinnedAt: string | null;
+  favorite: boolean;
+  lastOpenedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

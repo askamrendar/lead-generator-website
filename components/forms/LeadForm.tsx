@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId, cloneElement, isValidElement } from 'react';
+import type { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, Loader2 } from 'lucide-react';
@@ -130,11 +131,26 @@ function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const fieldId = useId();
+  const errorId = `${fieldId}-error`;
+  // Associate the label + error message with the control for screen readers.
+  const control =
+    isValidElement(children)
+      ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+          id: fieldId,
+          'aria-invalid': error ? true : undefined,
+          'aria-describedby': error ? errorId : undefined,
+        })
+      : children;
   return (
     <div className="space-y-1.5">
-      <Label>{label}</Label>
-      {children}
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+      <Label htmlFor={fieldId}>{label}</Label>
+      {control}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs font-medium text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

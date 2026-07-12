@@ -128,12 +128,12 @@ export function WebsiteActions({ website }: { website: WebsiteSummary }) {
         onClose={() => setDeleteOpen(false)}
         onConfirm={async () => {
           const res = await deleteWebsiteAction(website.id);
-          if (res.ok) toast({ variant: 'success', title: 'Website deleted' });
+          if (res.ok) toast({ variant: 'success', title: 'Moved to Trash' });
           else toast({ variant: 'error', title: 'Delete failed', description: res.error });
         }}
-        title={`Delete "${website.name}"?`}
-        description="This permanently removes the website and its configuration. This cannot be undone."
-        confirmLabel="Delete"
+        title={`Move "${website.name}" to Trash?`}
+        description="The website is moved to Trash. You can restore it, or delete it permanently from there."
+        confirmLabel="Move to Trash"
         destructive
       />
     </>

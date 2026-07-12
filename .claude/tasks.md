@@ -1,5 +1,8 @@
 # Master Backlog
 
+> This file supplements **`PROJECT_MEMORY.md`**. `PROJECT_MEMORY.md` (project root) is the
+> canonical project memory — read it first.
+
 > Priority: **P0** (now/critical) · **P1** (next) · **P2** (soon) · **P3** (later).
 > Status: Pending · In Progress · Done · Blocked. Keep in sync with
 > [`PROJECT_MANIFEST.md`](../PROJECT_MANIFEST.md) (canonical "current/next task") and

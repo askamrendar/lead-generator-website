@@ -1,90 +1,34 @@
-import * as React from 'react';
-import { KeyRound, Rocket, ScrollText } from 'lucide-react';
-import { Panel } from '@/components/ui/panel';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { DataTable, type Column } from '@/components/ui/data-table';
-import { StatusBadge } from '@/components/websites/StatusBadge';
-import { deploymentBadge } from '@/lib/websites/status';
+import {
+  listDeployments,
+  getDeploymentConfig,
+  providerHealth,
+} from '@/lib/deployment/service';
+import { DeploymentDashboard } from '@/components/deployments/DeploymentDashboard';
 
 /**
- * Deployment tab — UI-only shell, ready for Phase 8. No deployment logic: the tables
- * are empty and actions are disabled. Establishes the layout (status, history, env
- * vars, logs, rollback) so wiring a provider later is drop-in.
+ * Website Deployments tab — the real Deployment Engine dashboard (Phase 8.0). Loads
+ * deployment history, config, and provider health through the tenant-access-guarded
+ * service (the website-detail layout already enforced access). ZIP export works with
+ * no credentials; cloud providers show "not configured" until Phase 10 keys.
  */
-type Row = { id: string };
-const historyColumns: Column<Row>[] = [
-  { key: 'version', header: 'Version' },
-  { key: 'status', header: 'Status' },
-  { key: 'provider', header: 'Provider' },
-  { key: 'duration', header: 'Duration' },
-  { key: 'created', header: 'Created' },
-  { key: 'actions', header: <span className="sr-only">Rollback</span>, align: 'right' },
-];
+export default async function WebsiteDeploymentsPage({
+  params,
+}: {
+  params: Promise<{ websiteId: string }>;
+}) {
+  const { websiteId } = await params;
+  const [deployments, config, health] = await Promise.all([
+    listDeployments(websiteId),
+    getDeploymentConfig(websiteId),
+    providerHealth(websiteId),
+  ]);
 
-function MiniCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <Card className="p-4">
-      <p className="text-xs text-muted-fg">{label}</p>
-      <div className="mt-1 text-sm font-medium text-foreground">{value}</div>
-    </Card>
-  );
-}
-
-export default function WebsiteDeploymentsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <MiniCard label="Status" value={<StatusBadge badge={deploymentBadge()} />} />
-        <MiniCard label="Provider" value="Not configured" />
-        <MiniCard label="Last deployment" value="—" />
-      </div>
-
-      <Panel
-        title="Deployments"
-        description="Publish history and rollback"
-        action={
-          <Button size="sm" disabled title="Available in Phase 8">
-            <Rocket aria-hidden />
-            Deploy
-          </Button>
-        }
-        bodyClassName="p-0"
-      >
-        <DataTable
-          columns={historyColumns}
-          rows={[]}
-          getRowKey={(r) => r.id}
-          empty="No deployments yet — publishing arrives in Phase 8."
-        />
-      </Panel>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel
-          title="Environment variables"
-          action={
-            <Button size="sm" variant="outline" disabled title="Available in Phase 8">
-              Add variable
-            </Button>
-          }
-        >
-          <EmptyState
-            icon={KeyRound}
-            title="No variables"
-            description="Per-environment configuration will live here."
-            className="border-0 py-6"
-          />
-        </Panel>
-        <Panel title="Build logs">
-          <EmptyState
-            icon={ScrollText}
-            title="No logs yet"
-            description="Deployment and build logs will stream here."
-            className="border-0 py-6"
-          />
-        </Panel>
-      </div>
-    </div>
+    <DeploymentDashboard
+      websiteId={websiteId}
+      deployments={deployments}
+      config={config}
+      health={health}
+    />
   );
 }

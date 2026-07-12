@@ -39,7 +39,7 @@ export function DataTable<T>({
   className?: string;
 }) {
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-border', className)}>
+    <div className={cn('overflow-x-auto rounded-lg border border-border', className)}>
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">

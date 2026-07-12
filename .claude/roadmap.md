@@ -1,5 +1,8 @@
 # Roadmap — Future Releases
 
+> This file supplements **`PROJECT_MEMORY.md`**. `PROJECT_MEMORY.md` (project root) is the
+> canonical project memory — read it first.
+
 > Canonical, richer versions: [`ROADMAP.md`](../ROADMAP.md) (phase checklist) and
 > [`NEXT_RELEASE_PLAN.md`](../NEXT_RELEASE_PLAN.md) (per-phase objectives/deps/risks/
 > deliverables/success criteria). This file maps those to **version milestones**.

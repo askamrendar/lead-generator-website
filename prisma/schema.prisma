@@ -26,8 +26,10 @@ datasource db {
 // Enums
 // ---------------------------------------------------------------------------
 
-/// Organization/team role. Hierarchy (high→low): OWNER > ADMIN > MEMBER > VIEWER.
-/// Mirrored as pure logic in lib/auth/permissions/roles.ts (single source for checks).
+/// Organization role. Single-user SaaS: every account is the OWNER of its own
+/// organization. The full hierarchy (OWNER > ADMIN > MEMBER > VIEWER) is retained
+/// in the enum + lib/auth/permissions/roles.ts so the access layer stays generic and
+/// future scaling can reintroduce lower roles without a schema change.
 enum Role {
   OWNER
   ADMIN
@@ -35,18 +37,12 @@ enum Role {
   VIEWER
 }
 
-enum InvitationStatus {
-  PENDING
-  ACCEPTED
-  REVOKED
-  EXPIRED
-}
-
 enum WebsiteStatus {
   DRAFT
   GENERATED
   PUBLISHED
   ARCHIVED
+  TRASHED
 }
 
 // ---------------------------------------------------------------------------
@@ -67,9 +63,76 @@ model User {
   accounts            Account[]
   sessions            Session[]
   memberships         Membership[]
-  teamMemberships     TeamMembership[]
   ownedProjects       Project[]            @relation("ProjectOwner")
   passwordResetTokens PasswordResetToken[]
+  notifications       Notification[]
+  preference          UserPreference?
+  prompts             Prompt[]
+  aiRuns              AiRun[]
+}
+
+// ---------------------------------------------------------------------------
+// Background Infrastructure (Phase 8.5) — durable job queue + notifications.
+// Jobs run as the SYSTEM (the enqueue is the authorization point); a worker
+// entrypoint (/api/jobs/run) processes due jobs, invoked by an external scheduler.
+// ---------------------------------------------------------------------------
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  queue       String
+  type        String
+  payload     Json?
+  status      JobStatus @default(QUEUED)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  /// Optional tenant scope (loose ref — the dashboard filters by it).
+  workspaceId String?
+  /// Optional website scope, denormalized from payload for an indexed per-website
+  /// lookup (avoids a non-indexable JSON-path scan on the fastest-growing table).
+  websiteId   String?
+  scheduledAt DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  error       String?
+  result      Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, scheduledAt])
+  @@index([workspaceId, createdAt])
+  @@index([queue, status])
+  @@index([websiteId, createdAt])
+  // Supports the stuck-job reaper (find RUNNING jobs past a visibility timeout).
+  @@index([status, startedAt])
+}
+
+enum NotificationLevel {
+  SUCCESS
+  ERROR
+  WARNING
+  INFO
+}
+
+model Notification {
+  id        String            @id @default(cuid())
+  userId    String
+  level     NotificationLevel @default(INFO)
+  title     String
+  body      String?
+  read      Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model Account {
@@ -132,7 +195,9 @@ model PasswordResetToken {
 // SaaS multi-tenancy — Organization → Workspace → Project → Website
 // ---------------------------------------------------------------------------
 
-/// Tenant root. Every user gets a personal Organization on first sign-up.
+/// Tenant root. Each account owns exactly one personal Organization (created on
+/// first sign-up). Kept as the tenant boundary so billing/scaling can attach here
+/// later without reworking ownership. Single-user: one owner Membership per org.
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -142,8 +207,6 @@ model Organization {
 
   memberships Membership[]
   workspaces  Workspace[]
-  teams       Team[]
-  invitations TeamInvitation[]
 }
 
 /// Org-level RBAC edge: a user's role within an organization.
@@ -173,6 +236,8 @@ model Workspace {
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   settings     WorkspaceSettings?
   projects     Project[]
+  mediaAssets  MediaAsset[]
+  mediaFolders MediaFolder[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -188,52 +253,6 @@ model WorkspaceSettings {
   metadata      Json?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-}
-
-model Team {
-  id             String   @id @default(cuid())
-  name           String
-  organizationId String
-  createdAt      DateTime @default(now())
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  members      TeamMembership[]
-  invitations  TeamInvitation[]
-
-  @@index([organizationId])
-}
-
-model TeamMembership {
-  id        String   @id @default(cuid())
-  userId    String
-  teamId    String
-  role      Role     @default(MEMBER)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, teamId])
-  @@index([teamId])
-}
-
-/// Email invitation to join a team (and its organization) with a target role.
-model TeamInvitation {
-  id             String           @id @default(cuid())
-  email          String
-  organizationId String
-  teamId         String?
-  role           Role             @default(MEMBER)
-  token          String           @unique
-  status         InvitationStatus @default(PENDING)
-  expires        DateTime
-  createdAt      DateTime         @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  team         Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([email])
 }
 
 /// Ownership record inside a Workspace; owns one or more Websites.
@@ -282,12 +301,269 @@ model Website {
   generatedAt      DateTime?
   status           WebsiteStatus @default(DRAFT)
   archivedAt       DateTime?
+  /// Phase 9 — Single-user productivity. Trash (soft-delete, distinct from archive),
+  /// pin + favorite for quick access, and a bounded JSON revision snapshot list.
+  trashedAt        DateTime?
+  pinnedAt         DateTime?
+  favorite         Boolean       @default(false)
+  lastOpenedAt     DateTime?
+  /// Bounded list of version snapshots ({at,label,builderConfig,businessConfig}), newest first.
+  revisions        Json?
+  /// Deployment provider selection + environment variables (see lib/deployment).
+  /// Config only — the Deployment Engine owns deploy logic; the Builder never deploys.
+  deploymentConfig Json?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deployments Deployment[]
+  domains     Domain[]
+  content     ContentItem[]
 
   @@unique([projectId, slug])
   @@index([projectId])
   @@index([projectId, status])
+  @@index([projectId, pinnedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Deployment Engine (Phase 8.0) — records of publish attempts per Website.
+// The Deployment Engine owns deploy logic via a provider abstraction
+// (lib/deployment); the Website Builder never deploys.
+// ---------------------------------------------------------------------------
+
+enum DeploymentStatus {
+  QUEUED
+  BUILDING
+  DEPLOYING
+  READY
+  ERROR
+  CANCELLED
+  ROLLED_BACK
+}
+
+// ---------------------------------------------------------------------------
+// AI Blog Generator (Phase 8.3) — generated content items (pages + articles) per
+// Website. Independent module (lib/blog); reuses the AI Engine for copy and stores
+// SEO metadata; never duplicates page rendering.
+// ---------------------------------------------------------------------------
+
+enum ContentType {
+  SERVICE
+  CITY
+  AREA
+  NEIGHBORHOOD
+  LOCATION
+  FAQ
+  COMPARISON
+  EDUCATIONAL
+  RESOURCE
+  CASE_STUDY
+  PRESS_RELEASE
+  LANDING
+  SUPPORTING
+  ARTICLE
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model ContentItem {
+  id             String        @id @default(cuid())
+  websiteId      String
+  type           ContentType   @default(ARTICLE)
+  title          String
+  slug           String
+  status         ContentStatus @default(DRAFT)
+  /// Markdown body.
+  body           String        @default("")
+  excerpt        String?
+  /// SEO snapshot { title, description, canonical, og, twitter }.
+  seo            Json?
+  /// Loose reference to a MediaAsset id (no FK — keeps Blog ⊥ Media decoupled).
+  featuredImageId String?
+  tags           String[]      @default([])
+  wordCount      Int           @default(0)
+  readingTimeMin Int           @default(0)
+  /// Capped array of prior versions.
+  revisions      Json?
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@index([websiteId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Media Library (Phase 8.2) — workspace-scoped Digital Asset Management. Assets are
+// reusable across the workspace's websites. Independent module (lib/media); never
+// edits pages/deploys. Storage is pluggable via a StorageProvider abstraction.
+// ---------------------------------------------------------------------------
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  LOGO
+  ICON
+  OTHER
+}
+
+model MediaFolder {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime     @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assets    MediaAsset[]
+
+  @@index([workspaceId])
+}
+
+model MediaAsset {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  folderId        String?
+  kind            MediaKind @default(IMAGE)
+  filename        String
+  /// Public/served URL (via the serve route for local storage, or CDN URL for cloud).
+  url             String
+  /// Storage provider id (local · r2 · s3 · gcs · azure · supabase · custom).
+  storageProvider String    @default("local")
+  /// Opaque key within the provider.
+  storageKey      String
+  mimeType        String
+  sizeBytes       Int
+  width           Int?
+  height          Int?
+  altText         String?
+  tags            String[]  @default([])
+  usageCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder    MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([folderId])
+}
+
+// ---------------------------------------------------------------------------
+// Domain Manager (Phase 8.1) — custom domains attached to a Website. Independent
+// module (lib/domains); never manages deployments, never edits content.
+// ---------------------------------------------------------------------------
+
+enum DomainStatus {
+  PENDING
+  VERIFYING
+  ACTIVE
+  ERROR
+}
+
+model Domain {
+  id                String       @id @default(cuid())
+  websiteId         String
+  hostname          String       @unique
+  isPrimary         Boolean      @default(false)
+  /// DNS provider id (cloudflare · vercel · netlify · custom).
+  provider          String       @default("custom")
+  status            DomainStatus @default(PENDING)
+  verificationToken String
+  verified          Boolean      @default(false)
+  /// "none" | "pending" | "active".
+  sslStatus         String       @default("none")
+  redirectWww       Boolean      @default(true)
+  /// Optional redirect target host (e.g. force apex → www or vice-versa).
+  redirectTo        String?
+  createdAt         DateTime     @default(now())
+  verifiedAt        DateTime?
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+}
+
+model Deployment {
+  id          String           @id @default(cuid())
+  websiteId   String
+  /// Provider id (zip · cloudflare · vercel · netlify · docker · github · custom).
+  provider    String
+  status      DeploymentStatus @default(QUEUED)
+  /// "production" | "preview".
+  environment String           @default("production")
+  url         String?
+  commitRef   String?
+  error       String?
+  /// Ordered log lines captured during the deploy.
+  logs        Json?
+  durationMs  Int?
+  createdAt   DateTime         @default(now())
+  finishedAt  DateTime?
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId, createdAt])
+  @@index([websiteId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Single-User Productivity (Phase 9) — per-user preferences, prompt library,
+// and AI run history. One account = one owner; these are user-scoped, not shared.
+// ---------------------------------------------------------------------------
+
+/// Personal workspace + theme preferences and lightweight UI state (open JSON `data`
+/// for forward-compat: keyboard-shortcut overrides, default range, layout, etc.).
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  theme     String   @default("system") // system | light | dark
+  data      Json?
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Reusable AI prompt (prompt library / templates). `category` groups templates;
+/// `builtIn` marks seedable starter prompts; `useCount` powers recents/favorites.
+model Prompt {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  category  String   @default("general")
+  favorite  Boolean  @default(false)
+  builtIn   Boolean  @default(false)
+  useCount  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([userId, favorite])
+}
+
+/// AI run history — a record of each AI invocation (prompt used, kind, target).
+/// `output` is a bounded preview; full artifacts live on their owning resource.
+model AiRun {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   // website | blog | content | freeform
+  prompt    String
+  output    String?
+  websiteId String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

@@ -22,7 +22,8 @@ export function WorkspaceSwitcher({
   current: WorkspaceSummary | null;
 }) {
   const [pending, startTransition] = React.useTransition();
-  if (!current || workspaces.length === 0) return null;
+  // Single-user SaaS: with one (or zero) workspace there is nothing to switch — hide it.
+  if (!current || workspaces.length <= 1) return null;
 
   return (
     <Dropdown

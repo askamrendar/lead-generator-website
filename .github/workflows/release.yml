@@ -1,0 +1,77 @@
+# Release workflow (Phase 10.4). Triggered by pushing a version tag (v*).
+# Re-runs the full gate suite against Postgres, builds the Docker image, and
+# publishes a build artifact + GitHub release. Does NOT deploy to production
+# automatically — deployment is a manual/approved step.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to release (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: leadgen
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/leadgen?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/leadgen?schema=public
+      AUTH_SECRET: ci-test-secret-not-for-production
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ALLOW_LOCALHOST_BUILD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-${{ github.ref_name }}
+          path: .next
+          retention-days: 30
+
+  docker:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image (no push)
+        run: docker build -t leadgen:${{ github.ref_name }} .
+
+  github-release:
+    needs: [verify, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: true

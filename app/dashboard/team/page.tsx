@@ -1,13 +1,10 @@
-import { Users } from 'lucide-react';
-import { PlaceholderPage } from '@/components/dashboard/PlaceholderPage';
+import { redirect } from 'next/navigation';
 
+/**
+ * Team collaboration was removed — this is a single-user-per-account SaaS. This route
+ * is retained only as a redirect so any old bookmark lands somewhere sensible; the
+ * directory should be deleted in cleanup.
+ */
 export default function TeamPage() {
-  return (
-    <PlaceholderPage
-      title="Team"
-      description="Invite members and manage roles."
-      icon={Users}
-      phase="9"
-    />
-  );
+  redirect('/dashboard');
 }

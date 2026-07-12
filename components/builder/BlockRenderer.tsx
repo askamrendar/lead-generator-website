@@ -22,7 +22,7 @@ export function BlockRenderer({
             return (
               <div
                 key={`${block.type}-${i}`}
-                className="container my-2 rounded border border-dashed border-red-300 bg-red-50 p-2 text-xs text-red-600"
+                className="container my-2 rounded border border-dashed border-red-300 bg-red-50 p-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400"
               >
                 Unknown block type: <code>{block.type}</code>
               </div>

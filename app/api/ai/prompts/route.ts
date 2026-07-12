@@ -3,7 +3,7 @@ import { business } from '@/data/business';
 import { pagePromptTemplate, PROMPT_LIBRARY_VERSION } from '@/lib/ai/prompts';
 import { buildHomeContext } from '@/lib/ai/context';
 import type { PageType } from '@/lib/ai/types';
-import { enforceRateLimit } from '@/lib/api/security';
+import { enforceRateLimit, requireAdmin } from '@/lib/api/security';
 import { LIMITS } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
@@ -25,6 +25,10 @@ const PAGE_TYPES: PageType[] = [
  * sample built prompt (home) so you can inspect what the model receives.
  */
 export async function GET(request: Request) {
+  // Admin-gated (fail-closed): exposes internal prompt templates.
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   const limited = enforceRateLimit(request, 'ai-read', LIMITS.aiRead());
   if (limited) return limited;
 

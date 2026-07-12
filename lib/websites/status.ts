@@ -12,7 +12,7 @@ export interface StatusBadge {
 }
 
 export interface WebsiteStatusInput {
-  status: 'DRAFT' | 'GENERATED' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'DRAFT' | 'GENERATED' | 'PUBLISHED' | 'ARCHIVED' | 'TRASHED';
   generatedAt?: Date | string | null;
   seoConfig?: unknown;
 }
@@ -26,6 +26,8 @@ export function lifecycleBadge(w: WebsiteStatusInput): StatusBadge {
       return { label: 'Generated', tone: 'info' };
     case 'ARCHIVED':
       return { label: 'Archived', tone: 'neutral' };
+    case 'TRASHED':
+      return { label: 'Trashed', tone: 'neutral' };
     case 'DRAFT':
     default:
       return { label: 'Draft', tone: 'warning' };

@@ -101,6 +101,9 @@ function Toaster({
       {toasts.map((t) => (
         <div
           key={t.id}
+          // Error toasts interrupt assertively so failures are announced promptly.
+          role={t.variant === 'error' ? 'alert' : 'status'}
+          aria-live={t.variant === 'error' ? 'assertive' : 'polite'}
           className={cn(
             'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-border bg-background p-4 shadow-lg animate-fade-up',
           )}

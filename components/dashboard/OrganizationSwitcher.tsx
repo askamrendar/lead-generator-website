@@ -26,6 +26,17 @@ export function OrganizationSwitcher({
   const [pending, startTransition] = React.useTransition();
   if (!current) return null;
 
+  // Single-user SaaS: with one organization there is nothing to switch. Show the org
+  // name as a static, non-interactive label (settings remain reachable via the nav).
+  if (organizations.length <= 1) {
+    return (
+      <span className="inline-flex max-w-[12rem] items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm">
+        <Building2 className="size-4 shrink-0 text-muted-fg" aria-hidden />
+        <span className="truncate font-medium text-foreground">{current.name}</span>
+      </span>
+    );
+  }
+
   return (
     <Dropdown
       label="Organizations"

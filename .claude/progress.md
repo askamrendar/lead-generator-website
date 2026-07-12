@@ -1,5 +1,8 @@
 # Progress — Completed & Current Milestones
 
+> This file supplements **`PROJECT_MEMORY.md`**. `PROJECT_MEMORY.md` (project root) is the
+> canonical project memory — read it first. History below is preserved for reference.
+
 > Status legend: ✅ Completed · 🔄 In Progress · ⏳ Pending · ⛔ Blocked.
 > Canonical release detail: [`CHANGELOG.md`](../CHANGELOG.md). Roadmap:
 > [`ROADMAP.md`](../ROADMAP.md). Update this file whenever a phase changes state.

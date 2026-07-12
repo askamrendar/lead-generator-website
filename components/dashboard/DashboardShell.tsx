@@ -49,6 +49,12 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-dvh bg-muted/30">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 border-r border-border bg-background md:flex md:flex-col">
         <SidebarNav />
@@ -71,7 +77,7 @@ export function DashboardShell({
           onMenu={() => setMobileOpen(true)}
           onOpenSearch={() => setPaletteOpen(true)}
         />
-        <main className="flex-1">
+        <main id="main" className="flex-1">
           <ErrorBoundary>
             <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
               {children}

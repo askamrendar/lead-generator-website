@@ -1,13 +1,21 @@
-import { BarChart3 } from 'lucide-react';
-import { WebsitePlaceholder } from '@/components/websites/WebsitePlaceholder';
+import { websiteAnalytics } from '@/lib/analytics/service';
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 
-export default function WebsiteAnalyticsPage() {
+/**
+ * Website Analytics tab (Phase 8.4). Real internal metrics via the tenant-access
+ * -guarded service; external sources (GA4/GSC) shown Awaiting-Credentials. Read-only.
+ */
+export default async function WebsiteAnalyticsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ websiteId: string }>;
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { websiteId } = await params;
+  const { range } = await searchParams;
+  const summary = await websiteAnalytics(websiteId, Number(range) || 14);
   return (
-    <WebsitePlaceholder
-      title="Analytics"
-      description="Traffic and conversion insight for this website."
-      icon={BarChart3}
-      phase="9+"
-    />
+    <AnalyticsDashboard summary={summary} basePath={`/dashboard/websites/${websiteId}/analytics`} />
   );
 }

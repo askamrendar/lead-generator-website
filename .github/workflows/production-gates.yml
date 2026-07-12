@@ -1,0 +1,83 @@
+# Production quality gates (Task 9) — runs the same six gates verified locally.
+# Additive: does not replace any existing workflow. Spins up Postgres so prisma
+# migrate deploy + tests + build run against a real database.
+name: Production Gates
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'stable/**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: leadgen
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/leadgen?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/leadgen?schema=public
+      AUTH_SECRET: ci-test-secret-not-for-production
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      ALLOW_LOCALHOST_BUILD: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gate 1
+      - name: Prisma generate
+        run: npx prisma generate
+
+      # Gate 2
+      - name: Prisma migrate deploy
+        run: npx prisma migrate deploy
+
+      # Gate 3
+      - name: Type-check
+        run: npm run type-check
+
+      # Gate 4
+      - name: Lint
+        run: npm run lint
+
+      # Gate 5
+      - name: Tests
+        run: npm test
+
+      # Gate 6
+      - name: Production build
+        run: npm run build
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-${{ github.sha }}
+          path: .next
+          retention-days: 7

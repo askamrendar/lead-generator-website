@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAIConfig, getProviderKeyEnv } from '@/lib/ai/config';
 import { getProviderByName } from '@/lib/ai/providers';
 import type { ProviderName } from '@/lib/ai/types';
-import { enforceRateLimit } from '@/lib/api/security';
+import { enforceRateLimit, requireAdmin } from '@/lib/api/security';
 import { LIMITS } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
@@ -11,6 +11,10 @@ const ALL: ProviderName[] = ['openai', 'anthropic', 'gemini', 'openrouter', 'moc
 
 /** Provider status: which is active and which have keys configured. */
 export async function GET(request: Request) {
+  // Admin-gated (fail-closed): exposes which provider keys are configured.
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   const limited = enforceRateLimit(request, 'ai-read', LIMITS.aiRead());
   if (limited) return limited;
 

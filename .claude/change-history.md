@@ -1,5 +1,8 @@
 # Change History — Living Project Log
 
+> This file supplements **`PROJECT_MEMORY.md`** (canonical project memory — read first).
+> History below is preserved (append-only).
+>
 > Chronological record of phases, releases, architectural changes, and tags.
 > Newest at top. Canonical release notes: [`CHANGELOG.md`](../CHANGELOG.md); ADRs:
 > `.claude/decisions.md` + [`docs/decision-log.md`](../docs/decision-log.md);

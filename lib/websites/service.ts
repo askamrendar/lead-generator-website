@@ -26,6 +26,10 @@ const SUMMARY_SELECT = {
   timezone: true,
   generatedAt: true,
   archivedAt: true,
+  trashedAt: true,
+  pinnedAt: true,
+  favorite: true,
+  lastOpenedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -42,6 +46,10 @@ type SummaryRow = {
   timezone: string;
   generatedAt: Date | null;
   archivedAt: Date | null;
+  trashedAt: Date | null;
+  pinnedAt: Date | null;
+  favorite: boolean;
+  lastOpenedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -59,6 +67,10 @@ function toSummary(w: SummaryRow): WebsiteSummary {
     timezone: w.timezone,
     generatedAt: w.generatedAt?.toISOString() ?? null,
     archivedAt: w.archivedAt?.toISOString() ?? null,
+    trashedAt: w.trashedAt?.toISOString() ?? null,
+    pinnedAt: w.pinnedAt?.toISOString() ?? null,
+    favorite: w.favorite,
+    lastOpenedAt: w.lastOpenedAt?.toISOString() ?? null,
     createdAt: w.createdAt.toISOString(),
     updatedAt: w.updatedAt.toISOString(),
   };
@@ -100,12 +112,18 @@ export async function listWorkspaceWebsites(
   opts: { includeArchived?: boolean } = {},
 ): Promise<WebsiteSummary[]> {
   await requireWorkspaceAccess(workspaceId, 'website:view');
+  // Trashed sites are always excluded from the main list (they live in Trash);
+  // archived sites are excluded unless explicitly requested.
+  const excluded: WebsiteSummary['status'][] = opts.includeArchived
+    ? ['TRASHED']
+    : ['TRASHED', 'ARCHIVED'];
   const rows = await prisma.website.findMany({
     where: {
       project: { workspaceId },
-      ...(opts.includeArchived ? {} : { status: { not: 'ARCHIVED' } }),
+      status: { notIn: excluded },
     },
-    orderBy: { updatedAt: 'desc' },
+    // Pinned first (most-recently pinned), then most-recently updated.
+    orderBy: [{ pinnedAt: { sort: 'desc', nulls: 'last' } }, { updatedAt: 'desc' }],
     select: SUMMARY_SELECT,
   });
   return rows.map(toSummary);
@@ -206,7 +224,29 @@ export async function restoreWebsite(websiteId: string): Promise<void> {
   });
 }
 
+/**
+ * Soft-delete to Trash (Phase 9). Recoverable via `restoreFromTrash`. This is the
+ * default "delete" action from the UI — a hard delete only happens on explicit purge.
+ */
 export async function deleteWebsite(websiteId: string): Promise<void> {
+  await requireWebsiteAccess(websiteId, 'website:delete');
+  await prisma.website.update({
+    where: { id: websiteId },
+    data: { status: 'TRASHED', trashedAt: new Date() },
+  });
+}
+
+/** Restore a website out of Trash back to DRAFT. */
+export async function restoreFromTrash(websiteId: string): Promise<void> {
+  await requireWebsiteAccess(websiteId, 'website:update');
+  await prisma.website.update({
+    where: { id: websiteId },
+    data: { status: 'DRAFT', trashedAt: null },
+  });
+}
+
+/** Permanently delete a website (purge from Trash). Irreversible. */
+export async function purgeWebsite(websiteId: string): Promise<void> {
   await requireWebsiteAccess(websiteId, 'website:delete');
   await prisma.website.delete({ where: { id: websiteId } });
 }

@@ -4,13 +4,18 @@ import { getAIConfig } from '@/lib/ai/config';
 import { PROMPT_LIBRARY_VERSION } from '@/lib/ai/prompts';
 import { businessConfigHash } from '@/lib/ai/hash';
 import { cacheSnapshot, allContexts } from '@/lib/ai/generation';
-import { enforceRateLimit } from '@/lib/api/security';
+import { enforceRateLimit, requireAdmin } from '@/lib/api/security';
 import { LIMITS } from '@/lib/api/rate-limit';
 
 export const runtime = 'nodejs';
 
 /** Overall AI engine status: provider, versions, and cache coverage. */
 export async function GET(request: Request) {
+  // Admin-gated (fail-closed): reveals provider posture (configured keys, active
+  // model, cache coverage) — not for anonymous callers. Matches the AI write routes.
+  const denied = requireAdmin(request);
+  if (denied) return denied;
+
   const limited = enforceRateLimit(request, 'ai-read', LIMITS.aiRead());
   if (limited) return limited;
 

@@ -12,7 +12,13 @@ import type { SearchResult } from '@/lib/search/types';
 
 const ACTIONS: SearchResult[] = [
   { id: 'act:new-website', title: 'Create new website', subtitle: 'Guided wizard', href: '/dashboard/websites/new', group: 'Actions' },
+  { id: 'act:templates', title: 'Browse templates', subtitle: 'Blueprint library', href: '/dashboard/templates', group: 'Actions' },
   { id: 'act:ai', title: 'Generate with AI', subtitle: 'AI Generator', href: '/dashboard/ai-generator', group: 'Actions' },
+  { id: 'act:prompts', title: 'Open prompt library', subtitle: 'AI prompts', href: '/dashboard/prompts', group: 'Actions' },
+  { id: 'act:favorites', title: 'View favorites & pinned', subtitle: 'Quick access', href: '/dashboard/favorites', group: 'Actions' },
+  { id: 'act:jobs', title: 'Background jobs', subtitle: 'Queues & workers', href: '/dashboard/jobs', group: 'Actions' },
+  { id: 'act:trash', title: 'Open trash', subtitle: 'Restore or purge', href: '/dashboard/trash', group: 'Actions' },
+  { id: 'act:preferences', title: 'Open preferences', subtitle: 'Theme & shortcuts', href: '/dashboard/preferences', group: 'Actions' },
   { id: 'act:settings', title: 'Open settings', subtitle: 'Workspace & account', href: '/dashboard/settings', group: 'Actions' },
 ];
 

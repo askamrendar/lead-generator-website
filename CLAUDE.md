@@ -1,8 +1,20 @@
+# PROJECT MEMORY
+
+This repository uses **`PROJECT_MEMORY.md`** (project root) as the **SINGLE SOURCE OF TRUTH**.
+
+Every Claude session MUST:
+
+1. Read `PROJECT_MEMORY.md` first.
+2. Avoid scanning the repository unless necessary.
+3. Read only files required for the requested task.
+4. Update `PROJECT_MEMORY.md` before considering any milestone complete.
+
+---
+
 # CLAUDE.md — AI Operating System Entry Point
 
-> **This is the first file every Claude Code session should read.** It is the map
-> to the whole project. Deep detail lives in the linked canonical docs — this file
-> orients you fast, then points you there.
+> **Read `PROJECT_MEMORY.md` first (canonical).** This file remains the map to the
+> project and points to the deeper canonical docs; it orients you fast.
 
 ## 30-second resume
 
