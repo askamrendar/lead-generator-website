@@ -131,10 +131,13 @@ export async function deleteAsset(assetId: string): Promise<void> {
 
 /** For the serve route: access-checked asset bytes (local) or metadata. */
 export async function readAssetBytes(assetId: string): Promise<{ data: Uint8Array; mimeType: string } | null> {
-  const a = await prisma.mediaAsset.findUniqueOrThrow({
+  // Missing/unknown id → null (the route maps that to 404) rather than a Prisma P2025
+  // throw that would surface as a noisy 500. Access is still enforced below for real assets.
+  const a = await prisma.mediaAsset.findUnique({
     where: { id: assetId },
     select: { workspaceId: true, storageProvider: true, storageKey: true, mimeType: true },
   });
+  if (!a) return null;
   await requireWorkspaceAccess(a.workspaceId, 'workspace:view');
   const stored = await getStorageProvider(a.storageProvider).read(a.storageKey);
   return stored ? { data: stored.data, mimeType: a.mimeType } : null;

@@ -8,8 +8,17 @@
 `develop` (all Phase 7–10 + Release-Engineering work; uncommitted. Production `main` = v0.6.0.) No git writes without approval.
 
 ## Last completed task
-**Release Engineering pass** — deployment queue refactor + full production audit + all safe code-only fixes.
-All six gates green, self-run (**136/136** tests, sitemap 66). See `PROJECT_MEMORY.md` §18/§19 (2026-07-12).
+**Phase 11 — Production Deployment & UAT** (2026-07-12). Real staging simulation (prod build +
+fresh Postgres DB), full UAT battery, security/perf/a11y/SEO testing, and a **GO (conditional)**
+Go/No-Go report. Two fixes made + gate-verified: added CSP/HSTS/Permissions-Policy headers; fixed
+a media-raw 500→404 bug. Full report: `docs/PHASE_11_DEPLOYMENT_UAT.md`. All six gates green
+(**136/136**, sitemap 66). See `PROJECT_MEMORY.md` §18/§19.
+
+## Deploy verdict: GO (conditional)
+Code is production-ready. Launch is gated only on **external** items you must provide: a managed
+Postgres, the 4 REQUIRED + 3 fail-closed env vars (esp. real `NEXT_PUBLIC_SITE_URL` **before**
+build, fresh `AUTH_SECRET`, `JOBS_WORKER_TOKEN`, `SECRET_ENCRYPTION_KEY`), a worker cron hitting
+`/api/jobs/run`, and TLS/domain. See the launch checklist in `docs/PHASE_11_DEPLOYMENT_UAT.md` §12.
 
 ## Current gate status (self-run 2026-07-12, all GREEN)
 ```

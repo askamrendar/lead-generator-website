@@ -82,10 +82,20 @@ Local media lives in `.media-store/` — back it up, or use the R2/S3 provider.
 3. `release.yml` re-runs gates, builds the Docker image, uploads the build artifact, opens
    a **draft** GitHub release. Publish after review. **Never auto-deploy to production.**
 
-## 10. Known production follow-ups (not yet done)
+## 10. Known production follow-ups
 
-- **Media storage** local-fs by default → R2/S3 for multi-instance.
-- **Rate limiter + event bus** in-memory/per-instance → Redis for a fleet.
-- **Provider secrets** plaintext unless `SECRET_ENCRYPTION_KEY` + the secret service are enabled.
-- **The AI Generator batch + Tasks 6–9 are implemented but NOT yet gate-verified** in this
-  working tree — verify (Section 2) before releasing.
+> **Phase 11 UAT (2026-07-12):** see `docs/PHASE_11_DEPLOYMENT_UAT.md` for the full staging
+> simulation, Go/No-Go report, infra diagram, env checklist, rollback/monitoring/backup plans,
+> and launch checklist. Status below reflects that verification.
+
+- **Secret encryption at rest** — ✅ **done**: AES-256-GCM (`lib/security/secrets.ts`), applied to
+  provider creds; **fail-closed in production** (storing a secret without `SECRET_ENCRYPTION_KEY`
+  now throws rather than storing plaintext).
+- **AI Generator + health/env/logger batch** — ✅ **gate-verified** (test 136/136); async
+  deployments run on the job queue; a **stuck-job reaper** self-heals crashed workers.
+- **Security headers** — ✅ **CSP + HSTS + Permissions-Policy added** (7 total) in `next.config.mjs`.
+- **Media storage** local-fs by default → R2/S3 for multi-instance (⛔ needs bucket keys). Put
+  `.media-store/` on a persistent, backed-up volume if staying local.
+- **Rate limiter + event bus** in-memory/per-instance → Redis for a fleet (single node is fine).
+- **Worker** — jobs only run if an external scheduler POSTs `/api/jobs/run` with `JOBS_WORKER_TOKEN`
+  (compose `worker` service, Vercel Cron, or a systemd timer). Without it, jobs queue but never run.

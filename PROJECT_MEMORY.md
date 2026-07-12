@@ -213,6 +213,26 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **Phase 11 — Production Deployment & UAT** — ✅ VERIFIED (2026-07-12): all six gates green (test **136/136**,
+  sitemap 66) + a **real staging simulation** (production build served on :3100 against a fresh separate Postgres DB).
+  *Objective:* prep for deploy, run full UAT, security/perf/a11y/SEO testing, produce a Go/No-Go report — no new
+  features. *Done:* (1) fresh-DB migration path validated (all 10 migrations apply from empty); (2) full UAT battery
+  live — auth (enumeration-safe register, weak-pw 422, dashboard 307→login, **rate-limit 429 after burst**),
+  auto-provisioning (1 Org+1 Workspace+OWNER per user), **tenant isolation** (no cross-org membership path),
+  AI generate via live worker (**GENERATED, 12 blocks**), blog generate (**ARTICLE created**), async deploy
+  (QUEUED→READY re-verified), health probes (live/ready 200, metrics fail-closed 401→200), worker auth (401/200/503),
+  **backup/restore proven** (pg_dump→restore→row counts matched), trash/restore, export 401-gated, accept-invitation
+  410; (3) 12 marketing/SSG routes 200; SEO (sitemap 66, robots, 4 JSON-LD, noindex on auth); a11y (skip link, id=main,
+  label association) confirmed in served HTML. *Changes (gate-verified):* **added CSP + HSTS + Permissions-Policy**
+  security headers (`next.config.mjs`, 4→7 headers; verified non-breaking under CSP); **fixed a real bug** —
+  `readAssetBytes` (`lib/media/service.ts`) used `findUniqueOrThrow` so `/api/media/[id]/raw` returned **500** for a
+  missing id → now `findUnique`+null → **404** (fail-safe, no probing/noise). *Deliverables:* `docs/PHASE_11_DEPLOYMENT_UAT.md`
+  (infra diagram, env checklist, rollback/monitoring/backup plans, Go/No-Go, launch checklist); refreshed
+  `docs/DEPLOYMENT_PRODUCTION.md` §10. *Verdict:* **GO (conditional)** — code production-ready; activation gated on
+  YOUR infra/creds (managed Postgres, the 4 REQUIRED + 3 fail-closed env vars, a worker cron, TLS/domain). *Lessons:*
+  `findUniqueOrThrow` on a public/raw-serve path turns a missing id into a 500 — use `findUnique`+null there; CSP with
+  `'unsafe-inline'` script-src is required for Next's inline bootstrap + the theme/JSON-LD scripts (nonce-based CSP is a
+  later hardening step). *Next:* production cutover when creds/infra are provided, or the deferred code-only debt (§ TODO.md).
 - **Release Engineering: production audit + code-only hardening** — ✅ VERIFIED (2026-07-12): all six gates green
   (test **136/136**, sitemap 66) + async-deploy re-verified E2E after the changes. *Objective:* run a full 6-dimension
   production audit (6 parallel specialist reviewers over the real code) and apply every safe code-only fix; leave only
@@ -425,6 +445,17 @@ or record it as verified on gate results that were not run.
 ## 19 · Session Log (append-only; newest first)
 > Template: `Date · Objective · Files Modified · Architecture Changes · Issues Found · Issues Fixed · Remaining Work · Next Task`
 
+- **2026-07-12 (Phase 11 — Deployment & UAT)** — *Objective:* production deploy prep + full UAT + Go/No-Go, no new
+  features. *Outcome:* real staging sim (prod build on :3100 + fresh `leadgen_staging` DB); all six gates green
+  (**136/136**, sitemap 66). *Issues found + fixed:* (1) missing security headers → added CSP/HSTS/Permissions-Policy
+  (`next.config.mjs`); (2) `/api/media/[id]/raw` 500 on missing id → `readAssetBytes` now `findUnique`+null → 404.
+  *UAT verified live:* auth (enum-safe, rate-limit 429, dashboard 307→login), auto-provision, tenant isolation, AI
+  generate (12 blocks), blog, async deploy (READY), health probes, worker auth, **backup/restore (pg_dump→restore, rows
+  matched)**, trash/restore, export 401, SEO (66/robots/4×JSON-LD/noindex), a11y (skip link/id=main/labels). *Deliverable:*
+  `docs/PHASE_11_DEPLOYMENT_UAT.md` (diagram/env/rollback/monitoring/backup/Go-No-Go/launch checklist). *Verdict:* GO
+  (conditional) — blocked only by external infra/creds. *Cleanup:* staging DB dropped, UAT data + temp files removed,
+  dev DB untouched. *Remaining:* production cutover (needs YOUR Postgres + env + worker cron + TLS); deferred code-only
+  debt. *Next task:* cutover on creds, or next code-only debt item. *Note:* no git commit — awaiting approval.
 - **2026-07-12 (Release Engineering)** — *Objective:* RC-mode — refactor deployments onto the job queue, run a full
   production audit, apply all code-only fixes. *Outcome:* all six gates green (**136/136**, sitemap 66), async deploy
   verified E2E twice (QUEUED→READY via the worker). *Async deploy:* `lib/deployment/service.ts` (removed `runDeploy`;
