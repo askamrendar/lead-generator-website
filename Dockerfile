@@ -32,6 +32,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV ALLOW_LOCALHOST_BUILD=1
 RUN npx prisma generate
 RUN npm run build
+# The repo ships no public/ dir (Next doesn't require one) — ensure it exists so the
+# runner stage's COPY doesn't fail.
+RUN mkdir -p public
 
 # ---- runtime ----
 FROM node:22-bookworm-slim AS runner
