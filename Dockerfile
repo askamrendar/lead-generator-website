@@ -18,6 +18,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# NEXT_PUBLIC_* values are inlined into the client bundle at BUILD time. Platforms like
+# Railway inject service variables as build args — declare it so the real public origin
+# gets baked in (canonical URLs / sitemap / OG all derive from it). Falls back to the
+# localhost demo build when unset (ALLOW_LOCALHOST_BUILD below acknowledges that).
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 # Generate the Prisma client, then build. ALLOW_LOCALHOST_BUILD lets the image build
 # without a public NEXT_PUBLIC_SITE_URL baked in; set it for real at runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -39,6 +45,11 @@ COPY --from=build /app/.next ./.next
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/prisma ./prisma
+
+# Media store (local-fs provider) — pre-create with runtime-user ownership so uploads
+# work as non-root. Mount a persistent volume here (e.g. Railway volume → /app/.media-store)
+# or media is lost on redeploy.
+RUN mkdir -p /app/.media-store && chown nextjs:nodejs /app/.media-store
 
 USER nextjs
 EXPOSE 3000
