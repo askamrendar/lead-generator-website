@@ -10,7 +10,9 @@ WORKDIR /app
 # Prisma needs openssl at install/generate time.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
-RUN npm ci
+# --ignore-scripts: package.json has a `postinstall: prisma generate` hook, but this
+# stage has no prisma/ schema yet — the build stage runs `npx prisma generate` explicitly.
+RUN npm ci --ignore-scripts
 
 # ---- build ----
 FROM node:22-bookworm-slim AS build
