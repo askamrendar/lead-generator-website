@@ -67,6 +67,22 @@ const aboutLayout: BlockInstance[] = [
   { type: 'cta' },
 ];
 
+const contactLayout: BlockInstance[] = [
+  { type: 'hero' },
+  { type: 'lead-form' },
+  { type: 'map' },
+  { type: 'trust-badges' },
+  { type: 'faq' },
+];
+
+const faqLayout: BlockInstance[] = [
+  { type: 'hero' },
+  { type: 'faq' },
+  { type: 'benefits' },
+  { type: 'lead-form' },
+  { type: 'cta' },
+];
+
 export const baseTemplate: Template = {
   id: 'base',
   name: 'Base',
@@ -76,6 +92,8 @@ export const baseTemplate: Template = {
   layouts: {
     home: homeLayout,
     about: aboutLayout,
+    contact: contactLayout,
+    faq: faqLayout,
     service: serviceLayout,
     serviceCity: serviceCityLayout,
     city: locationLayout,
@@ -86,4 +104,4 @@ export const baseTemplate: Template = {
   },
 };
 
-export { homeLayout, serviceLayout, serviceCityLayout, locationLayout, aboutLayout };
+export { homeLayout, serviceLayout, serviceCityLayout, locationLayout, aboutLayout, contactLayout, faqLayout };

@@ -3,6 +3,7 @@ import { requireWebsiteAccess } from '@/lib/auth/access';
 import { selectBuild } from '@/lib/builder/select';
 import { composePage } from '@/lib/builder/compose';
 import { business as sampleBusiness } from '@/data/business';
+import { businessFromWizard } from '@/lib/websites/render-service';
 import { normalizeDocument, publish as publishDoc, snapshot } from '@/lib/builder/editor/document';
 import type { BuilderDocument } from '@/lib/builder/editor/types';
 import type { PageDefinition, ThemeId } from '@/lib/builder/types';
@@ -14,14 +15,15 @@ import type { PageDefinition, ThemeId } from '@/lib/builder/types';
  * generation engines are untouched and rendering stays in `BlockRenderer`.
  *
  * On first open, `builderConfig` is seeded with a real starter `PageDefinition`
- * (`composePage`) so the editor never opens empty (Option A — see PROJECT_MEMORY §ADR).
+ * (`composePage`) derived from THE WEBSITE'S OWN business config — the sample
+ * business is only the fallback when no valid config exists, so the editor never
+ * opens empty.
  */
 
-/** A stable seed page + default theme derived from the website's stored config. */
-function seed(): { page: PageDefinition; themeId: ThemeId } {
-  // Reuse the builder's own selection to pick a coherent template/theme. The sample
-  // business drives layout/theme defaults until per-website AI generation exists.
-  const selection = selectBuild(sampleBusiness, {});
+/** A stable seed page + default theme derived from the website's own config. */
+function seed(businessConfig: unknown): { page: PageDefinition; themeId: ThemeId } {
+  const business = businessFromWizard(businessConfig) ?? sampleBusiness;
+  const selection = selectBuild(business, {});
   const page = composePage(selection.template, 'home', 'Home');
   return { page, themeId: selection.themeId };
 }
@@ -30,9 +32,9 @@ export async function getBuilderDocument(websiteId: string): Promise<BuilderDocu
   await requireWebsiteAccess(websiteId, 'website:view');
   const w = await prisma.website.findUniqueOrThrow({
     where: { id: websiteId },
-    select: { builderConfig: true },
+    select: { builderConfig: true, businessConfig: true },
   });
-  const { page, themeId } = seed();
+  const { page, themeId } = seed(w.businessConfig);
   return normalizeDocument(w.builderConfig, page, themeId);
 }
 

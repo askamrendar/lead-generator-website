@@ -39,6 +39,8 @@ function makePageAgent(expected: PageType) {
 // --- Page agents -------------------------------------------------------------
 export const homepageAgent = makePageAgent('home');
 export const aboutPageAgent = makePageAgent('about');
+export const contactPageAgent = makePageAgent('contact');
+export const faqPageAgent = makePageAgent('faq');
 export const servicePageAgent = makePageAgent('service');
 export const locationPageAgent = makePageAgent('city');
 export const statePageAgent = makePageAgent('state');
@@ -112,6 +114,8 @@ export async function blogTopicAgent(
 export const agents = {
   home: homepageAgent,
   about: aboutPageAgent,
+  contact: contactPageAgent,
+  faq: faqPageAgent,
   service: servicePageAgent,
   city: locationPageAgent,
   state: statePageAgent,

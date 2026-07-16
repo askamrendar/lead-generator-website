@@ -11,9 +11,9 @@ import { line } from '@/lib/deployment/providers/base';
 
 /**
  * ZIP Export provider — the one provider that works with NO external credentials.
- * It packages the website's publishable config bundle for download (served by the
- * export API route). A full static-HTML archive depends on the AI Generator's output;
- * until then this exports the config bundle honestly.
+ * The deployment artifact is a REAL static-site archive: every page rendered to
+ * HTML (via lib/export/static-site) + stylesheet + robots/sitemap/favicon, served
+ * by the export API route. Upload the unzipped folder to any static host.
  */
 export class ZipProvider implements DeploymentProvider {
   id = 'zip' as const;
@@ -39,8 +39,8 @@ export class ZipProvider implements DeploymentProvider {
       status: 'READY',
       url: `/api/websites/${input.websiteId}/export`,
       logs: [
-        line('[zip] packaging website configuration bundle…'),
-        line('[zip] bundle ready — download from the deployment.'),
+        line('[zip] rendering every page of the site to static HTML…'),
+        line('[zip] static site archive ready — download from the deployment.'),
       ],
     };
   }

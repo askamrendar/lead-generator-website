@@ -297,6 +297,32 @@ export function deterministicContent(ctx: PageContext): GeneratedPageContent {
       emergency = undefined;
       break;
     }
+    case 'contact': {
+      seoTitle = `Contact ${b.name} | ${b.address.city}, ${b.address.stateAbbr}`;
+      metaDescription =
+        `Contact ${b.name} in ${b.address.city}, ${b.address.stateAbbr}. Call ${b.phone} or send a message — fast, friendly local service.`.slice(0, 155);
+      heroHeading = `Contact ${b.name}`;
+      heroCopy = `Call ${b.phone} or send us a message — we respond fast.`;
+      intro = `Reach ${b.name} for quotes, scheduling, and questions. We serve ${ctx.placeName} and the surrounding area.`;
+      faqs = genericLocationFaqs(ctx);
+      benefits = genericBenefits(ctx.placeName);
+      process = genericProcess();
+      emergency = emergencyCtaCopy(b, b.address.city);
+      break;
+    }
+    case 'faq': {
+      seoTitle = `FAQ | ${b.name}`;
+      metaDescription =
+        `Answers to the most common questions about ${b.category.toLowerCase()} from ${b.name} in ${ctx.placeName}.`.slice(0, 155);
+      heroHeading = 'Frequently Asked Questions';
+      heroCopy = `Straight answers from the ${b.category.toLowerCase()} experts at ${b.name}.`;
+      intro = `Everything you need to know before hiring ${b.name} — pricing, scheduling, service area, and more.`;
+      faqs = genericLocationFaqs(ctx);
+      benefits = genericBenefits(ctx.placeName);
+      process = genericProcess();
+      emergency = undefined;
+      break;
+    }
     case 'home':
     default: {
       seoTitle = `${b.name} | ${b.tagline}`;

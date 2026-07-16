@@ -6,6 +6,8 @@ import { aiSelectBuild } from '@/lib/builder/select';
 import { composePage } from '@/lib/builder/compose';
 import { normalizeDocument } from '@/lib/builder/editor/document';
 import { saveBuilderDocumentCore } from '@/lib/websites/builder-service';
+import { isAIEnabled } from '@/lib/ai/config';
+import { generateWebsite as aiGenerateWebsite } from '@/lib/ai/generation';
 import { logger } from '@/lib/logger';
 import type { WebsiteWizardInput } from '@/lib/websites/schema';
 
@@ -82,6 +84,27 @@ export async function generateWebsiteCore(websiteId: string): Promise<GenerateRe
     themeId: selection.themeId,
     source: selection.source,
   });
+
+  // M6 — warm the per-website AI content cache when a live provider is configured.
+  // The cache is keyed by businessConfigHash (already multi-tenant-safe), so this
+  // pre-generates unique copy for the site's core pages via the EXISTING engine
+  // batch. Offline mode skips silently — the deterministic fallback keeps working
+  // and the AI Generator tab shows an honest offline banner instead.
+  if (isAIEnabled()) {
+    try {
+      const summary = await aiGenerateWebsite(business, 'core');
+      logger.info('website content cache warmed', {
+        websiteId,
+        total: summary.total,
+        ai: summary.ai,
+        fallback: summary.fallback,
+        errors: summary.errors,
+      });
+    } catch (err) {
+      // Never fail generation over cache warming — pages fall back per-request.
+      logger.warn('website content warm failed', { websiteId, error: String(err) });
+    }
+  }
 
   return {
     websiteId,

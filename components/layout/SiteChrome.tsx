@@ -33,14 +33,30 @@ export function SiteChrome({
   header,
   footer,
   sticky,
+  seo,
   children,
 }: {
   header: React.ReactNode;
   footer: React.ReactNode;
   sticky: React.ReactNode;
+  /** Marketing-site SEO payload (sample-business JSON-LD graph + brand CSS).
+   *  Rendered on marketing routes only, so tenant sites never inherit it. */
+  seo?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname() ?? '/';
+
+  // Tenant websites (/sites/* previews, /hosted/* custom domains) provide their
+  // entire document structure, including their own <main id="main"> — pass
+  // through completely unwrapped (and without the marketing JSON-LD/brand CSS).
+  if (
+    pathname === '/sites' ||
+    pathname.startsWith('/sites/') ||
+    pathname === '/hosted' ||
+    pathname.startsWith('/hosted/')
+  ) {
+    return <>{children}</>;
+  }
 
   if (isBareRoute(pathname)) {
     return (
@@ -52,6 +68,7 @@ export function SiteChrome({
 
   return (
     <>
+      {seo}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand focus:px-4 focus:py-2 focus:text-white"

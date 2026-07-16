@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Loader2, CheckCircle2, AlertTriangle, RotateCcw, XCircle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2, AlertTriangle, RotateCcw, XCircle, Image as ImageIcon, Copy, WifiOff } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,11 +20,24 @@ interface JobRow {
   createdAt: string | Date;
 }
 
+interface ImagePromptRow {
+  slot: string;
+  aspect: string;
+  prompt: string;
+  alt: string;
+}
+
 interface Props {
   websiteId: string;
   status: string; // Website.status
   jobs: JobRow[];
   workerConfigured: boolean;
+  /** True when a live AI provider key is configured (else deterministic mode). */
+  aiEnabled: boolean;
+  /** The effective provider name (e.g. "anthropic" or "mock"). */
+  aiProvider: string;
+  /** Per-website text-to-image prompt pack from the image-prompt engine. */
+  imagePrompts: ImagePromptRow[];
 }
 
 const STATUS_META: Record<string, { label: string; variant: 'brand' | 'accent' | 'muted' | 'outline'; icon: typeof Loader2; spin?: boolean }> = {
@@ -40,7 +53,7 @@ const STATUS_META: Record<string, { label: string; variant: 'brand' | 'accent' |
  * shows live progress by polling while a job is active, and lists generation history.
  * All generation logic lives in the existing engines/services — this is UI only.
  */
-export function AiGenerator({ websiteId, status, jobs, workerConfigured }: Props) {
+export function AiGenerator({ websiteId, status, jobs, workerConfigured, aiEnabled, aiProvider, imagePrompts }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = React.useTransition();
@@ -112,6 +125,31 @@ export function AiGenerator({ websiteId, status, jobs, workerConfigured }: Props
         </div>
       </Card>
 
+      {/* Honest AI-mode banner (M6): offline/deterministic vs live provider. */}
+      {aiEnabled ? (
+        <Card className="p-4">
+          <p className="flex items-start gap-2 text-sm text-muted-fg">
+            <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+            <span>
+              <span className="font-medium text-foreground">Live AI mode</span> — unique copy is generated via{' '}
+              <code className="rounded bg-muted px-1">{aiProvider}</code> and cached per website.
+            </span>
+          </p>
+        </Card>
+      ) : (
+        <Card className="p-4">
+          <p className="flex items-start gap-2 text-sm text-muted-fg">
+            <WifiOff className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
+            <span>
+              <span className="font-medium text-foreground">Offline mode</span> — pages use built-in deterministic copy.
+              Add an AI provider key (e.g. <code className="rounded bg-muted px-1">OPENAI_API_KEY</code> or{' '}
+              <code className="rounded bg-muted px-1">ANTHROPIC_API_KEY</code>, with{' '}
+              <code className="rounded bg-muted px-1">AI_PROVIDER</code>) to generate unique copy for this website.
+            </span>
+          </p>
+        </Card>
+      )}
+
       {/* Active progress */}
       {active && (
         <Card className="p-5">
@@ -146,6 +184,43 @@ export function AiGenerator({ websiteId, status, jobs, workerConfigured }: Props
             </Button>
           </div>
         </Card>
+      )}
+
+      {/* Image prompts (M7) — copy-ready text-to-image prompts for this business. */}
+      {imagePrompts.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ImageIcon className="size-4" aria-hidden /> Image prompts
+          </h3>
+          <p className="text-xs text-muted-fg">
+            Paste these into any image generator (DALL·E, Imagen, Midjourney…) to create on-brand photos for this
+            website. Alt text is included for accessibility.
+          </p>
+          <Card className="divide-y divide-border overflow-hidden">
+            {imagePrompts.map((p) => (
+              <div key={p.slot} className="flex items-start justify-between gap-3 px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-fg">
+                    {p.slot} <span className="font-normal normal-case">· {p.aspect}</span>
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">{p.prompt}</p>
+                  <p className="mt-1 truncate text-xs text-muted-fg" title={p.alt}>alt: {p.alt}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Copy ${p.slot} prompt`}
+                  onClick={() => {
+                    void navigator.clipboard.writeText(p.prompt);
+                    toast({ variant: 'success', title: 'Prompt copied' });
+                  }}
+                >
+                  <Copy aria-hidden />
+                </Button>
+              </div>
+            ))}
+          </Card>
+        </div>
       )}
 
       {/* History */}

@@ -21,6 +21,8 @@ import type {
 export type PageType =
   | 'home'
   | 'about'
+  | 'contact'
+  | 'faq'
   | 'service'
   | 'city'
   | 'state'

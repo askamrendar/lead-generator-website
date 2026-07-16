@@ -157,6 +157,14 @@ reference) and a demo walkthrough. **Approved:** all milestone plans + the v0.8.
 sitemap 66, JSON-LD 4). No billing built (policy).
 
 ## 14 · Next Immediate Task
+**Railway live re-test of the True AI Website Generator** (built + gate-verified locally 2026-07-16, see §18/§19):
+set `AUTH_URL=https://<public-origin>` (and `NEXT_PUBLIC_SITE_URL`) on Railway, redeploy, and re-run the
+"Empire Plumbing NYC" UAT — builder preview must show Empire/New York, `/sites/<id>` must serve every page,
+Deploy (zip) must yield a browsable static archive, a verified domain must serve the site. Then the remaining
+TODO.md items (verification-email honest copy [MEDIUM]) and Phase 10 provider wiring + deferred code-only debt.
+Housekeeping: git publish still awaiting explicit approval.
+
+### (superseded) previous Next-Task
 **Production Stabilization Mode** (per 2026-07-11 audit). No new features. Address the audit's Phase A
 (critical-before-deploy) items — most urgent: **in-product AI Generator is still a placeholder** (core value
 loop not wired); media is **local-filesystem only** (breaks on serverless/multi-instance); deployments run
@@ -213,6 +221,49 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **True AI Website Generator (M1–M7) — multi-page tenant sites, hosting, static export** — ✅ VERIFIED
+  (2026-07-16): all six gates green (test **142/142** (+6 export), sitemap 66, build 95 pages) **+ live runtime
+  E2E on a prod server (:3210)**: published tenant site served all page types (home/about/contact/faq/privacy/
+  terms/service/city/serviceCity) with the TENANT's data (no Apex/Austin leak); draft site 404 to anonymous;
+  bogus path 404; **custom-domain hosting verified** (Host: empireplumbing.example.com → 200, tenant title,
+  root-relative links, canonical = custom domain; unknown host → 404); **static ZIP export verified** (real
+  `application/zip`, 11 HTML pages + assets/site.css + favicon.svg + robots + sitemap, zero JS, JSON-LD kept,
+  `<details>` FAQ, plain `<form action=<app>/api/lead>`). *Objective:* close the TODO 2026-07-16 UAT criticals —
+  feed the existing engine EVERY tenant's business (never duplicate). *Architecture (per
+  docs/ARCHITECTURE_WEBSITE_GENERATOR.md, written before implementation):* pages are deterministic functions of
+  (template, businessConfig) → no new storage/migration; one bridge service enumerates+renders routes on demand.
+  *Files added:* `lib/websites/render-service.ts` (websiteBusiness/websiteRoutes/matchRoute/renderSitePage +
+  SiteBundle loaders), `lib/websites/legal-pages.ts` (deterministic privacy/terms via existing rich-text block),
+  `app/sites/[websiteId]/[[...slug]]/page.tsx` (M3 preview/serving surface; published=public, else owner-only
+  fail-closed 404; noindex; `?static=1` renders the no-JS variant), `app/hosted/[host]/[[...slug]]/page.tsx`
+  (M5 custom-domain surface; verified+ACTIVE+PUBLISHED gate; redirectTo hop; ISR 300s; indexable),
+  `components/site-render/{SiteShell,SitePageView}.tsx` (tenant chrome — plain `<a>` links, shared by hosted +
+  export), `lib/export/{zip,favicon}.ts` (pure dependency-free STORE-ZIP writer + CRC32; deterministic SVG
+  favicon; `tests/export-zip.test.mjs` +6), `lib/export/static-blocks.tsx` (no-JS lead-form/FAQ substitutes),
+  `lib/export/static-site.ts` (M4: export **self-fetches** `/sites/<id>/<path>?static=1` with the caller's
+  cookie, strips Next runtime scripts (keeps JSON-LD), inlines build CSS, unwraps `/_next/image`, rewrites links
+  root-relative, zips). *Files modified:* PageType +`contact`/`faq` end-to-end (types, context builders, agents,
+  prompt TASKs, deterministic content, base template layouts, builder registry — compiler-enforced),
+  `middleware.ts` (foreign Host → rewrite `/hosted/<host>/<path>`, Edge-safe no-DB; auth guard unchanged; API
+  paths never rewritten), `lib/builder/editor/preview-context.ts` + `builder-service.ts` seed + builder page (M1:
+  preview/seed from the WEBSITE'S OWN config; sample only as last-resort fallback), `components/builder/
+  BlockRenderer.tsx` (+`overrides` prop), `app/api/websites/[websiteId]/export/route.ts` (real static-site ZIP;
+  `?format=config` keeps the JSON bundle), `app/api/lead/route.ts` (accepts form-encoded posts from exported
+  sites → HTML thank-you; JSON path unchanged), `lib/websites/generate-service.ts` (M6: warm per-website AI
+  content cache via existing `generateWebsite(business,'core')` when a key is configured; silent skip offline),
+  AI Generator tab (M6/M7: honest offline/live banner + per-website image-prompt pack with copy buttons from the
+  existing image-prompt engine), `app/layout.tsx` + `SiteChrome` (marketing JSON-LD/brand CSS moved into a `seo`
+  slot rendered ONLY on marketing routes; `/sites`+`/hosted` pass through fully unwrapped), zip deployment
+  provider copy honest ("static site archive"), tenant-site metadata uses `title.absolute` (no `%s | Apex`
+  template leak). *Lessons:* (1) `renderToStaticMarkup` cannot render client-reference components (next/link)
+  from an RSC route — export by SELF-FETCHING the live route instead (guarantees export ≡ hosted, byte-for-byte
+  pipeline); (2) tenant surfaces must escape the root layout's title template via `title.absolute` and skip the
+  root layout's sample-business JSON-LD (the `seo` slot pattern); (3) root layout JSON-LD/brand CSS ride
+  SiteChrome so path-aware exclusion needs no route-group moves. *Tech debt:* exported form posts to the app
+  origin (set NEXT_PUBLIC_SITE_URL in prod or leads 404); hosted-surface ISR isS 5 min (no on-publish revalidate
+  hook yet); export CSS is the whole app stylesheet (~250 KB, unpurged); sitemap/robots not yet served on the
+  hosted surface (only in the export). *Next:* Railway re-test of "Empire Plumbing NYC" (AUTH_URL fix is env-only),
+  remaining TODO UAT items (verification-email copy), then Phase 10 provider wiring.
 - **Phase 11 — Production Deployment & UAT** — ✅ VERIFIED (2026-07-12): all six gates green (test **136/136**,
   sitemap 66) + a **real staging simulation** (production build served on :3100 against a fresh separate Postgres DB).
   *Objective:* prep for deploy, run full UAT, security/perf/a11y/SEO testing, produce a Go/No-Go report — no new
@@ -445,6 +496,22 @@ or record it as verified on gate results that were not run.
 ## 19 · Session Log (append-only; newest first)
 > Template: `Date · Objective · Files Modified · Architecture Changes · Issues Found · Issues Fixed · Remaining Work · Next Task`
 
+- **2026-07-16 (True AI Website Generator M1–M7 — resumed & completed)** — *Objective:* resume the interrupted
+  generator build (M1–M3+M5 were on disk uncommitted; M4/M6/M7 unbuilt) and close the 2026-07-16 UAT criticals.
+  *Outcome:* all six gates green (**142/142**, sitemap 66) + full live runtime E2E (prod server :3210): tenant
+  sites serve all pages from their OWN config, custom-domain hosting works (Host-header rewrite → verified
+  domain → tenant site with canonical=domain), static ZIP export is a real zero-JS multi-page site archive,
+  draft sites fail closed 404. *Built this session:* M4 static export (`lib/export/{zip,favicon,static-blocks,
+  static-site}` + real export route + form-encoded `/api/lead` + `?static=1` render variant + BlockRenderer
+  overrides), M6 AI cache warming + offline banner, M7 image prompts + SVG favicon; fixes: tenant `title.absolute`
+  (was inheriting "| Apex Plumbing Co."), marketing JSON-LD/brand-CSS moved to SiteChrome `seo` slot (was leaking
+  onto tenant pages), SiteShell plain `<a>` links (next/link is a client reference — broke export SSR), `/hosted`
+  passthrough in SiteChrome. *Issues found+fixed during E2E:* export 500 (client-function invocation → switched
+  to self-fetch architecture); sample-business title/JSON-LD leaks. *Cleanup:* test user/site/domain deleted,
+  wizard site restored to DRAFT, dev DB otherwise untouched. *Remaining:* Railway re-test with `AUTH_URL` set;
+  TODO.md medium/low items (verification-email copy); tech debt in §18 entry. *Next task:* live Railway UAT
+  re-run ("Empire Plumbing NYC") after env fix, then Phase 10 provider wiring. *Note:* no git writes — awaiting
+  explicit approval.
 - **2026-07-12 (Phase 11 — Deployment & UAT)** — *Objective:* production deploy prep + full UAT + Go/No-Go, no new
   features. *Outcome:* real staging sim (prod build on :3100 + fresh `leadgen_staging` DB); all six gates green
   (**136/136**, sitemap 66). *Issues found + fixed:* (1) missing security headers → added CSP/HSTS/Permissions-Policy

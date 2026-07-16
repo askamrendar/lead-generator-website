@@ -86,6 +86,10 @@ const TASK: Record<PageType, (ctx: PageContext) => string> = {
     'Write the HOMEPAGE. Establish trust fast, summarize the full offering, and drive calls/quotes.',
   about: () =>
     'Write the ABOUT page. Tell an authentic company story that builds E-E-A-T and local trust.',
+  contact: () =>
+    'Write the CONTACT page. Make reaching out feel easy: surface phone, service area, and hours prominently with a reassuring, low-friction tone.',
+  faq: () =>
+    'Write the FAQ page. Answer the questions locals actually ask before hiring, in a reassuring expert voice.',
   service: (c) =>
     `Write the SERVICE page for "${c.service?.name}". Explain the service, outcomes, process, and pricing approach.`,
   city: (c) =>

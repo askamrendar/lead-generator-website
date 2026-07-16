@@ -37,6 +37,26 @@ export function buildAboutContext(config: BusinessConfig): PageContext {
   };
 }
 
+export function buildContactContext(config: BusinessConfig): PageContext {
+  return {
+    pageType: 'contact',
+    business: config,
+    path: paths.contact(),
+    title: `Contact ${config.name}`,
+    placeName: `${config.address.city}, ${config.address.stateAbbr}`,
+  };
+}
+
+export function buildFaqContext(config: BusinessConfig): PageContext {
+  return {
+    pageType: 'faq',
+    business: config,
+    path: '/faq',
+    title: 'Frequently Asked Questions',
+    placeName: `${config.address.city}, ${config.address.stateAbbr}`,
+  };
+}
+
 export function buildServiceContext(
   config: BusinessConfig,
   serviceSlug: string,

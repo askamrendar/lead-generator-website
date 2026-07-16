@@ -23,6 +23,8 @@ export type GeneratorFn = (template: Template) => PageDefinition;
 const PAGE_TYPES: PageType[] = [
   'home',
   'about',
+  'contact',
+  'faq',
   'service',
   'serviceCity',
   'city',

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getWebsite } from '@/lib/websites/service';
 import { getBuilderDocument } from '@/lib/websites/builder-service';
+import { businessFromWizard } from '@/lib/websites/render-service';
 import { buildPreviewContext } from '@/lib/builder/editor/preview-context';
 import { isAccessError } from '@/lib/auth/access';
 import { ToastProvider } from '@/components/ui/toast';
@@ -36,7 +37,8 @@ export default async function BuilderPage({
     throw err;
   }
 
-  const previewCtx = await buildPreviewContext(document.themeId);
+  const business = businessFromWizard(website.businessConfig);
+  const previewCtx = await buildPreviewContext(document.themeId, business);
 
   return (
     <ToastProvider>

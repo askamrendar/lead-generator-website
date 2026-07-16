@@ -2,42 +2,79 @@ import { NextResponse } from 'next/server';
 import { requireWebsiteAccess, accessErrorResponse } from '@/lib/auth/access';
 import { serverError } from '@/lib/api/security';
 import { prisma } from '@/lib/db/prisma';
+import { exportStaticSite } from '@/lib/export/static-site';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 /**
- * ZIP Export download — returns the website's publishable configuration bundle as a
- * downloadable JSON file. Tenant-access enforced. A full static-HTML archive depends
- * on the AI Generator's rendered output; until then this exports the config bundle.
+ * Website export download. Default: a REAL static-site ZIP — every page rendered to
+ * HTML (same pipeline as the hosted surface) + stylesheet + robots/sitemap/favicon,
+ * ready to open locally or upload to any static host. `?format=config` returns the
+ * legacy JSON configuration bundle. Tenant-access enforced.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ websiteId: string }> },
 ) {
   const { websiteId } = await params;
   try {
     await requireWebsiteAccess(websiteId, 'website:view');
-    const w = await prisma.website.findUniqueOrThrow({
-      where: { id: websiteId },
-      select: {
-        name: true,
-        slug: true,
-        language: true,
-        timezone: true,
-        themeId: true,
-        templateId: true,
-        industryId: true,
-        businessConfig: true,
-        builderConfig: true,
-        seoConfig: true,
-      },
+
+    const format = new URL(request.url).searchParams.get('format');
+    if (format === 'config') {
+      const w = await prisma.website.findUniqueOrThrow({
+        where: { id: websiteId },
+        select: {
+          name: true,
+          slug: true,
+          language: true,
+          timezone: true,
+          themeId: true,
+          templateId: true,
+          industryId: true,
+          businessConfig: true,
+          builderConfig: true,
+          seoConfig: true,
+        },
+      });
+      const bundle = JSON.stringify({ exportedAt: new Date().toISOString(), website: w }, null, 2);
+      return new NextResponse(bundle, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${w.slug || 'website'}-config.json"`,
+        },
+      });
+    }
+
+    // Prefer the site's primary verified custom domain as the canonical origin.
+    const domain = await prisma.domain.findFirst({
+      where: { websiteId, verified: true, status: 'ACTIVE' },
+      orderBy: { isPrimary: 'desc' },
+      select: { hostname: true },
     });
-    const bundle = JSON.stringify({ exportedAt: new Date().toISOString(), website: w }, null, 2);
-    return new NextResponse(bundle, {
+
+    // Self-fetch pages from THIS server instance (the request's own origin),
+    // forwarding the caller's cookies so owner-only (unpublished) sites render.
+    const reqUrl = new URL(request.url);
+    const result = await exportStaticSite(websiteId, {
+      appOrigin: `${reqUrl.protocol}//${reqUrl.host}`,
+      cookie: request.headers.get('cookie') ?? undefined,
+      siteOrigin: domain ? `https://${domain.hostname}` : undefined,
+    });
+    if (!result) {
+      return NextResponse.json(
+        { error: 'Nothing to export — complete the website configuration first.' },
+        { status: 422 },
+      );
+    }
+    return new NextResponse(Buffer.from(result.bytes), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="${w.slug || 'website'}-export.json"`,
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'X-Export-Pages': String(result.pages),
       },
     });
   } catch (err) {

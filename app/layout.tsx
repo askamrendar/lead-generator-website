@@ -52,11 +52,17 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-dvh flex-col pb-safe-mobile">
-        {/* Brand theming injected from the business config. */}
-        <style dangerouslySetInnerHTML={{ __html: brandCss() }} />
-        <JsonLd data={siteGraph} />
-        {/* Marketing chrome on public routes; auth/app routes render bare. */}
+        {/* Marketing chrome on public routes; auth/app routes render bare; tenant
+            site surfaces (/sites, /hosted) render fully unwrapped. The sample
+            business's brand CSS + JSON-LD graph ride the `seo` slot so tenant
+            websites never inherit them. */}
         <SiteChrome
+          seo={
+            <>
+              <style dangerouslySetInnerHTML={{ __html: brandCss() }} />
+              <JsonLd data={siteGraph} />
+            </>
+          }
           header={<Header config={business} services={services} cities={cities} />}
           footer={<Footer config={business} services={services} cities={cities} />}
           sticky={<StickyCallButton phone={business.phone} />}

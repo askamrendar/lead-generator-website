@@ -4,7 +4,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DASHBOARD_NAV } from '@/lib/dashboard/nav';
-import { business } from '@/data/business';
 import { cn } from '@/lib/utils';
 
 /**
@@ -29,7 +28,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className="truncate text-base font-bold text-foreground"
         >
-          {business.name}
+          {/* Product brand — the dashboard is the SaaS, not a tenant website. */}
+          Local Sites Pro
         </Link>
       </div>
 
