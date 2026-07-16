@@ -103,7 +103,9 @@ export const businessConfigSchema = z.object({
 
   // --- Brand ---
   brand: brandSchema.default({}),
-  heroImage: z.string().url().optional(),
+  /// Absolute URL or root-relative path (e.g. an AI-generated asset served from
+  /// `/api/sites/<id>/asset/<assetId>` — next/image needs relative same-origin paths).
+  heroImage: z.string().url().or(z.string().regex(/^\/[^\s]*$/)).optional(),
 
   // --- Offering ---
   primaryService: z.string().min(1),

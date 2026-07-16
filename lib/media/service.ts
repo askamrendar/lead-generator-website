@@ -87,6 +87,15 @@ export interface UploadInput {
 
 export async function uploadAsset(workspaceId: string, input: UploadInput): Promise<MediaAssetDTO> {
   await requireWorkspaceAccess(workspaceId, 'workspace:update');
+  return uploadAssetCore(workspaceId, input);
+}
+
+/**
+ * SYSTEM-level upload (no session) — used by background job handlers (e.g. AI
+ * image generation during website.generate). The enqueue site is the
+ * authorization point, matching the jobs-run-as-SYSTEM convention.
+ */
+export async function uploadAssetCore(workspaceId: string, input: UploadInput): Promise<MediaAssetDTO> {
   if (!isAllowedMime(input.mimeType)) throw new Error('Unsupported file type.');
 
   const provider = getStorageProvider('local'); // functional default; cloud = Phase 10
@@ -141,6 +150,23 @@ export async function readAssetBytes(assetId: string): Promise<{ data: Uint8Arra
   await requireWorkspaceAccess(a.workspaceId, 'workspace:view');
   const stored = await getStorageProvider(a.storageProvider).read(a.storageKey);
   return stored ? { data: stored.data, mimeType: a.mimeType } : null;
+}
+
+/**
+ * SYSTEM-level asset read (no session) — for surfaces that enforce their OWN
+ * gate (the public tenant-site asset route checks published-status + workspace
+ * ownership before calling this). Returns workspaceId so callers can verify.
+ */
+export async function readAssetBytesCore(
+  assetId: string,
+): Promise<{ data: Uint8Array; mimeType: string; workspaceId: string } | null> {
+  const a = await prisma.mediaAsset.findUnique({
+    where: { id: assetId },
+    select: { workspaceId: true, storageProvider: true, storageKey: true, mimeType: true },
+  });
+  if (!a) return null;
+  const stored = await getStorageProvider(a.storageProvider).read(a.storageKey);
+  return stored ? { data: stored.data, mimeType: a.mimeType, workspaceId: a.workspaceId } : null;
 }
 
 export async function storageHealth(workspaceId: string): Promise<StorageHealth[]> {

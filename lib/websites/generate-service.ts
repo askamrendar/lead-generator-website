@@ -8,6 +8,11 @@ import { normalizeDocument } from '@/lib/builder/editor/document';
 import { saveBuilderDocumentCore } from '@/lib/websites/builder-service';
 import { isAIEnabled } from '@/lib/ai/config';
 import { generateWebsite as aiGenerateWebsite } from '@/lib/ai/generation';
+import { withWebsiteAiCredentials } from '@/lib/ai/credentials';
+import { generateImage, isImageGenAvailable } from '@/lib/ai/services/image-gen';
+import { buildImagePrompts } from '@/lib/ai/services/image-prompts';
+import { buildHomeContext } from '@/lib/ai/context';
+import { uploadAssetCore } from '@/lib/media/service';
 import { logger } from '@/lib/logger';
 import type { WebsiteWizardInput } from '@/lib/websites/schema';
 
@@ -43,6 +48,12 @@ export interface GenerateResult {
  * at the enqueue site). Single implementation — the queue path does not duplicate it.
  */
 export async function generateWebsiteCore(websiteId: string): Promise<GenerateResult> {
+  // Resolve the workspace's BYO AI key (if connected) for every AI call below —
+  // selection, content-cache warming, and image generation all honor it.
+  return withWebsiteAiCredentials(websiteId, () => generateWebsiteCoreInner(websiteId));
+}
+
+async function generateWebsiteCoreInner(websiteId: string): Promise<GenerateResult> {
   const w = await prisma.website.findUniqueOrThrow({
     where: { id: websiteId },
     select: { businessConfig: true, builderConfig: true },
@@ -103,6 +114,43 @@ export async function generateWebsiteCore(websiteId: string): Promise<GenerateRe
     } catch (err) {
       // Never fail generation over cache warming — pages fall back per-request.
       logger.warn('website content warm failed', { websiteId, error: String(err) });
+    }
+  }
+
+  // M7+ — AI hero image (best-effort, never blocks generation). Only when the
+  // active provider has an image API (OpenAI/Gemini) and no hero exists yet:
+  // generate → save to the workspace Media Library → store the public
+  // tenant-asset path in businessConfig.brand.heroImageUrl (rendered by the
+  // hero block; served published-gated via /api/sites/<id>/asset/<assetId>).
+  const wizardCfg = w.businessConfig as WebsiteWizardInput & {
+    brand: { heroImageUrl?: string };
+  };
+  if (isImageGenAvailable() && !wizardCfg.brand?.heroImageUrl) {
+    try {
+      const heroPrompt = buildImagePrompts(buildHomeContext(business)).find((p) => p.slot === 'hero');
+      const img = heroPrompt ? await generateImage(heroPrompt) : null;
+      if (img) {
+        const row = await prisma.website.findUniqueOrThrow({
+          where: { id: websiteId },
+          select: { project: { select: { workspaceId: true } } },
+        });
+        const asset = await uploadAssetCore(row.project.workspaceId, {
+          filename: `${websiteId}-hero.png`,
+          mimeType: img.mimeType,
+          data: img.bytes,
+        });
+        const updatedConfig = {
+          ...wizardCfg,
+          brand: { ...wizardCfg.brand, heroImageUrl: `/api/sites/${websiteId}/asset/${asset.id}` },
+        };
+        await prisma.website.update({
+          where: { id: websiteId },
+          data: { businessConfig: updatedConfig as unknown as object },
+        });
+        logger.info('website hero image generated', { websiteId, assetId: asset.id });
+      }
+    } catch (err) {
+      logger.warn('website hero image failed', { websiteId, error: String(err) });
     }
   }
 

@@ -63,7 +63,7 @@ on the indexed websiteId column.
 ## ⛔ Externally blocked (need credentials / infra — cannot complete or fabricate)
 - [ ] Object storage (R2/S3) for media — needs bucket keys (interface ready; local-fs works)
 - [ ] One cloud-deploy provider end-to-end — needs provider API tokens (ZIP export works)
-- [ ] Live AI provider calls (OpenAI/Anthropic/Gemini) — needs API keys (deterministic works)
+- [x] Live AI provider calls — ✅ 2026-07-17: BYO workspace API keys (Settings → AI Providers, encrypted at rest, live test-connection); env keys still work; deterministic fallback unchanged
 - [ ] Running background worker — needs external cron → `POST /api/jobs/run` + `JOBS_WORKER_TOKEN`
 - [ ] Distributed rate limiter + event bus — needs Redis (in-memory works single-node)
 - [ ] GA4 / Search Console analytics — needs OAuth credentials (internal metrics work)

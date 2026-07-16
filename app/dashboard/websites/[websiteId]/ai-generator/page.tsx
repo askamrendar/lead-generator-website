@@ -1,7 +1,8 @@
 import { getWebsite } from '@/lib/websites/service';
 import { jobsForWebsite } from '@/lib/jobs/service';
 import { AiGenerator } from '@/components/websites/AiGenerator';
-import { isAIEnabled, getAIConfig } from '@/lib/ai/config';
+import { getAIConfig } from '@/lib/ai/config';
+import { aiCredentialsForWebsiteCore } from '@/lib/ai/credentials';
 import { businessFromWizard } from '@/lib/websites/render-service';
 import { buildHomeContext } from '@/lib/ai/context';
 import { buildImagePrompts } from '@/lib/ai/services/image-prompts';
@@ -42,14 +43,20 @@ export default async function WebsiteAiGeneratorPage({
       }))
     : [];
 
+  // AI mode resolution mirrors generation: workspace BYO key first, env second.
+  const workspaceCreds = await aiCredentialsForWebsiteCore(websiteId);
+  const envConfig = getAIConfig();
+  const aiEnabled = Boolean(workspaceCreds) || envConfig.enabled;
+  const aiProvider = workspaceCreds?.provider ?? envConfig.provider;
+
   return (
     <AiGenerator
       websiteId={websiteId}
       status={website.status}
       jobs={jobs}
       workerConfigured={Boolean(process.env.JOBS_WORKER_TOKEN)}
-      aiEnabled={isAIEnabled()}
-      aiProvider={getAIConfig().provider}
+      aiEnabled={aiEnabled}
+      aiProvider={aiProvider}
       imagePrompts={imagePrompts}
     />
   );

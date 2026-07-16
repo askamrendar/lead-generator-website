@@ -125,28 +125,38 @@ export function AiGenerator({ websiteId, status, jobs, workerConfigured, aiEnabl
         </div>
       </Card>
 
-      {/* Honest AI-mode banner (M6): offline/deterministic vs live provider. */}
+      {/* Honest AI-mode banner (M6): connected vs first-time connect CTA. */}
       {aiEnabled ? (
         <Card className="p-4">
           <p className="flex items-start gap-2 text-sm text-muted-fg">
             <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
             <span>
-              <span className="font-medium text-foreground">Live AI mode</span> — unique copy is generated via{' '}
+              <span className="font-medium text-foreground">AI connected</span> — unique copy
+              {aiProvider === 'openai' || aiProvider === 'gemini' ? ' and a hero image are' : ' is'} generated via{' '}
               <code className="rounded bg-muted px-1">{aiProvider}</code> and cached per website.
             </span>
           </p>
         </Card>
       ) : (
-        <Card className="p-4">
-          <p className="flex items-start gap-2 text-sm text-muted-fg">
-            <WifiOff className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden />
-            <span>
-              <span className="font-medium text-foreground">Offline mode</span> — pages use built-in deterministic copy.
-              Add an AI provider key (e.g. <code className="rounded bg-muted px-1">OPENAI_API_KEY</code> or{' '}
-              <code className="rounded bg-muted px-1">ANTHROPIC_API_KEY</code>, with{' '}
-              <code className="rounded bg-muted px-1">AI_PROVIDER</code>) to generate unique copy for this website.
-            </span>
-          </p>
+        <Card className="border-brand/30 bg-brand/5 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <WifiOff className="mt-0.5 size-5 shrink-0 text-amber-600" aria-hidden />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Connect an AI provider to unlock full generation</p>
+                <p className="mt-1 text-sm text-muted-fg">
+                  Right now websites are built with solid built-in copy (offline mode). Connect
+                  OpenAI, Anthropic, Gemini, or OpenRouter with your own API key to get unique,
+                  AI-written content — and an auto-generated hero image (OpenAI/Gemini).
+                </p>
+              </div>
+            </div>
+            <Button asChild className="shrink-0">
+              <a href="/dashboard/settings/ai-providers">
+                <Sparkles aria-hidden /> Connect AI provider
+              </a>
+            </Button>
+          </div>
         </Card>
       )}
 

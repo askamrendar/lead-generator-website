@@ -89,6 +89,8 @@ export function wizardToBusinessConfig(wizard: WebsiteWizardInput): BusinessConf
     tagline: `${business.category} you can trust in ${location.city}`,
     description: `${business.businessName} provides professional ${business.category.toLowerCase()} services in ${location.city}, ${location.state}.`,
     logoUrl: brand.logoUrl && brand.logoUrl.length > 0 ? brand.logoUrl : undefined,
+    // AI-generated hero (root-relative tenant-asset path, set by generation).
+    heroImage: brand.heroImageUrl && brand.heroImageUrl.length > 0 ? brand.heroImageUrl : undefined,
 
     // Contact
     phone: details.phone,

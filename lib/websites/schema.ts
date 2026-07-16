@@ -46,6 +46,8 @@ const hexColor = z
 
 export const brandStepSchema = z.object({
   logoUrl: z.string().trim().url('Enter a valid URL').or(z.literal('')).optional(),
+  /** Set by AI generation (root-relative tenant-asset path) — not user-entered. */
+  heroImageUrl: z.string().trim().optional(),
   primaryColor: hexColor.default('#2563eb'),
   accentColor: hexColor.default('#f97316'),
   fontFamily: z.string().trim().max(60).default('Inter'),

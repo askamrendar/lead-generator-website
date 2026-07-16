@@ -221,6 +221,41 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **BYO AI keys + AI images + all-SOON-removed (first-time AI onboarding)** — ✅ VERIFIED (2026-07-17): all six
+  gates green (test 151/151, sitemap 66) **+ full browser-driven E2E via Chrome DevTools Protocol on a prod
+  server**: real UI login → Settings → AI Providers → saved an Anthropic key (stored `enc:v1:` encrypted,
+  masked display, Disconnect works, invalid-key "Test connection" surfaces the provider 401 live) → created
+  "Peach State Electric" (Georgia) through the REAL wizard UI (state dropdown "Georgia (GA)", city autocomplete,
+  additional cities Marietta+Roswell) → clicked "Generate website" → worker ran → GENERATED
+  (electrical industry auto-selected) → published → all pages 200 incl. per-extra-city routes; workspace
+  Deployments/Domains/AI-Generator hubs render real data. *Objective:* first-time users must be able to
+  configure an AI API key in-product (was env-only), AI should generate content AND images, and every "Soon"
+  placeholder had to become real. *Files added:* `lib/ai/credentials-context.ts` (AsyncLocalStorage BYO-key
+  scope; `getAIConfig`/`getProviderKeyEnv` consult it first, env fallback, mock last — engine call sites
+  unchanged), `lib/ai/credentials.ts` (workspace-scoped save/read/clear/test; key AES-encrypted into
+  `WorkspaceSettings.metadata.aiCredentials` — NO migration; `withWebsiteAiCredentials` resolves website→
+  workspace key for job handlers; live test-connection makes a real 1-token completion),
+  `lib/ai/services/image-gen.ts` (OpenAI gpt-image-1 + Gemini Imagen-3 via fetch; anthropic/openrouter skip
+  gracefully), `app/api/sites/[websiteId]/asset/[assetId]/route.ts` (public tenant-asset serving:
+  published→public else owner-only, asset must belong to the website's workspace, fail-closed 404),
+  `components/dashboard/AiProviderForm.tsx` + real `settings/ai-providers` page + actions. *Files modified:*
+  `generate-service` (whole core wrapped in workspace creds; hero image generated best-effort after content-
+  warm → media library via new `uploadAssetCore` → `brand.heroImageUrl` root-relative path; never fails the
+  build), `blog/service` generateOneCore (creds-wrapped), `media/service` (+`uploadAssetCore`,
+  `readAssetBytesCore`), generator schema `heroImage` now accepts root-relative paths, wizard brand schema
+  +`heroImageUrl`, adapter maps it, AiGenerator tab (first-time "Connect AI provider" CTA → settings; banner
+  reflects workspace key), wizard start-step copy updated (was "ships in 7.2.4"), **all nav SOON flags removed**
+  (Websites/AI Generator/Deployments/Domains/Settings ready; website tabs Builder/Pages/SEO/Deployments/
+  Domains/Media/Analytics ready), real workspace hub pages for AI Generator/Deployments/Domains, real
+  per-website SEO tab (route map + keywords + open-page links), Settings Domains/Notifications placeholders →
+  real pointers; deleted `/dashboard/api-keys` + `/dashboard/settings/api-keys` (unbuilt platform API — removed
+  from nav rather than stubbed). *Research decision:* BYO-key via AsyncLocalStorage beats per-call threading
+  (0 engine signature changes) and env-mutation (request-unsafe); keys live at WORKSPACE level (tenant boundary,
+  one key covers all sites, matches the existing metadata JSON column). *Lessons:* (1) FormField injects ids
+  via cloneElement — wrapping a control in a fragment breaks the injection (city field got no id → wizard
+  validation failed); (2) stale `.next/types` after deleting a route dir fails type-check — clear it.
+  *Tech debt:* service/city images still placeholder tiles (hero only); test-connection costs one real token;
+  image-gen is single-shot (no retry). *Next:* Railway re-test with SECRET_ENCRYPTION_KEY set.
 - **True AI Website Generator (M1–M7) — multi-page tenant sites, hosting, static export** — ✅ VERIFIED
   (2026-07-16): all six gates green (test **142/142** (+6 export), sitemap 66, build 95 pages) **+ live runtime
   E2E on a prod server (:3210)**: published tenant site served all page types (home/about/contact/faq/privacy/

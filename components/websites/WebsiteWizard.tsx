@@ -298,9 +298,13 @@ function StartStep({
       <div className="flex items-start gap-2 rounded-lg bg-brand/5 p-3 text-xs text-muted-fg">
         <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
         <span>
-          At generation, AI will determine industry, services, keywords, brand colors, cities,
-          SEO strategy, blog strategy, internal links, and location pages — you can edit
-          everything before generating. (Generation ships in Phase 7.2.4.)
+          After creating, hit <strong>Generate</strong> on the website&apos;s AI Generator tab — the
+          engine picks an industry, template, and theme, composes every page (services, cities,
+          contact, FAQ, legal), and opens it in the Visual Builder. Connect an AI provider in{' '}
+          <a href="/dashboard/settings/ai-providers" className="text-brand underline-offset-2 hover:underline">
+            Settings → AI Providers
+          </a>{' '}
+          for unique AI copy and a hero image; without one, solid built-in copy is used.
         </span>
       </div>
     </div>
@@ -362,21 +366,14 @@ function LocationStep({ form, set, errors }: StepProps) {
           )}
         </FormField>
         <FormField id="city" label="City" error={errors.city} required>
-          <>
-            <Input
-              value={form.city}
-              onChange={set('city')}
-              placeholder={citySuggestions[0] ?? 'Austin'}
-              list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
-            />
-            {citySuggestions.length > 0 ? (
-              <datalist id="city-suggestions">
-                {citySuggestions.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            ) : null}
-          </>
+          {/* Explicit id: FormField's cloneElement can't reach through a fragment. */}
+          <Input
+            id="city"
+            value={form.city}
+            onChange={set('city')}
+            placeholder={citySuggestions[0] ?? 'Austin'}
+            list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
+          />
         </FormField>
       </div>
       <FormField
@@ -384,15 +381,21 @@ function LocationStep({ form, set, errors }: StepProps) {
         label="Additional cities served"
         hint="Comma separated — each city gets its own location + service pages."
       >
-        <>
-          <Input
-            value={form.additionalCities}
-            onChange={set('additionalCities')}
-            placeholder={citySuggestions.slice(1, 4).join(', ') || 'Round Rock, Cedar Park'}
-            list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
-          />
-        </>
+        <Input
+          id="additionalCities"
+          value={form.additionalCities}
+          onChange={set('additionalCities')}
+          placeholder={citySuggestions.slice(1, 4).join(', ') || 'Round Rock, Cedar Park'}
+          list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
+        />
       </FormField>
+      {citySuggestions.length > 0 ? (
+        <datalist id="city-suggestions">
+          {citySuggestions.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      ) : null}
       <FormField id="zipCodes" label="ZIP codes" hint="Comma separated, 5-digit (e.g. 78701). Invalid entries are dropped.">
         <Input value={form.zipCodes} onChange={set('zipCodes')} placeholder="78701, 78702" />
       </FormField>

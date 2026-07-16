@@ -1,4 +1,5 @@
 import type { AIConfig, ProviderName } from '@/lib/ai/types';
+import { activeAiCredentials } from '@/lib/ai/credentials-context';
 
 /**
  * AI configuration, resolved from environment variables. Nothing is hardcoded:
@@ -21,6 +22,9 @@ const VALID_PROVIDERS: ProviderName[] = [
 ];
 
 export function getProviderKeyEnv(provider: ProviderName): string | undefined {
+  // BYO workspace key (AsyncLocalStorage scope) wins over the environment.
+  const scoped = activeAiCredentials();
+  if (scoped && scoped.provider === provider) return scoped.apiKey;
   switch (provider) {
     case 'openai':
       return process.env.OPENAI_API_KEY;
@@ -36,7 +40,9 @@ export function getProviderKeyEnv(provider: ProviderName): string | undefined {
 }
 
 export function getAIConfig(): AIConfig {
-  const requested = (process.env.AI_PROVIDER ?? 'mock').toLowerCase();
+  // A BYO credential scope overrides the environment completely.
+  const scoped = activeAiCredentials();
+  const requested = (scoped?.provider ?? process.env.AI_PROVIDER ?? 'mock').toLowerCase();
   const provider: ProviderName = VALID_PROVIDERS.includes(
     requested as ProviderName,
   )
@@ -51,7 +57,7 @@ export function getAIConfig(): AIConfig {
 
   return {
     provider: effective,
-    model: process.env.AI_MODEL,
+    model: scoped?.model ?? process.env.AI_MODEL,
     temperature: Number.isFinite(temperature) ? temperature : 0.7,
     maxTokens: Number.isFinite(maxTokens) ? maxTokens : 2000,
     enabled: effective !== 'mock',

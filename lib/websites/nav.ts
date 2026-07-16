@@ -30,14 +30,14 @@ export interface WebsiteNavItem {
 
 export const WEBSITE_NAV: WebsiteNavItem[] = [
   { key: 'overview', label: 'Overview', segment: '', icon: LayoutDashboard, status: 'ready' },
-  { key: 'builder', label: 'Builder', segment: 'builder', icon: Paintbrush, status: 'soon', phase: '7.2.5' },
+  { key: 'builder', label: 'Builder', segment: 'builder', icon: Paintbrush, status: 'ready' },
   { key: 'ai', label: 'AI Generator', segment: 'ai-generator', icon: Sparkles, status: 'ready' },
-  { key: 'pages', label: 'Pages', segment: 'pages', icon: FileText, status: 'soon', phase: '7.2.5' },
-  { key: 'seo', label: 'SEO', segment: 'seo', icon: Search, status: 'soon', phase: '7.2.5' },
-  { key: 'deployments', label: 'Deployments', segment: 'deployments', icon: Rocket, status: 'soon', phase: '8' },
-  { key: 'domains', label: 'Domains', segment: 'domains', icon: Link2, status: 'soon', phase: '8.5' },
-  { key: 'media', label: 'Media', segment: 'media', icon: Image, status: 'soon', phase: '8.6' },
-  { key: 'analytics', label: 'Analytics', segment: 'analytics', icon: BarChart3, status: 'soon', phase: '9+' },
+  { key: 'pages', label: 'Pages', segment: 'pages', icon: FileText, status: 'ready' },
+  { key: 'seo', label: 'SEO', segment: 'seo', icon: Search, status: 'ready' },
+  { key: 'deployments', label: 'Deployments', segment: 'deployments', icon: Rocket, status: 'ready' },
+  { key: 'domains', label: 'Domains', segment: 'domains', icon: Link2, status: 'ready' },
+  { key: 'media', label: 'Media', segment: 'media', icon: Image, status: 'ready' },
+  { key: 'analytics', label: 'Analytics', segment: 'analytics', icon: BarChart3, status: 'ready' },
   { key: 'versions', label: 'Versions', segment: 'versions', icon: History, status: 'ready' },
   { key: 'settings', label: 'Settings', segment: 'settings', icon: Settings, status: 'ready' },
 ];

@@ -5,6 +5,7 @@ import { wordCount, readingTimeMin, makeExcerpt, buildSeo } from '@/lib/blog/seo
 import { generateContent } from '@/lib/blog/generate';
 import { recordAiRun } from '@/lib/prompts/service';
 import type { ContentType } from '@/lib/blog/content-types';
+import { withWebsiteAiCredentials } from '@/lib/ai/credentials';
 
 /**
  * Blog / content service — the ONLY read/write path for `ContentItem`s, all
@@ -109,7 +110,10 @@ export async function generateOne(websiteId: string, type: ContentType, topic?: 
  */
 export async function generateOneCore(websiteId: string, type: ContentType, topic?: string): Promise<ContentDTO> {
   const w = await prisma.website.findUniqueOrThrow({ where: { id: websiteId }, select: { businessConfig: true } });
-  const gen = generateContent(businessInput(w.businessConfig, type, topic));
+  // Honor the workspace's BYO AI key for any live-AI copy inside content generation.
+  const gen = await withWebsiteAiCredentials(websiteId, async () =>
+    generateContent(businessInput(w.businessConfig, type, topic)),
+  );
   const slug = await uniqueSlug(websiteId, gen.title);
   const words = wordCount(gen.body);
   const row = await prisma.contentItem.create({

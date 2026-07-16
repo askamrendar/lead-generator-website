@@ -6,7 +6,6 @@ import {
   Rocket,
   Link2,
   Image,
-  KeyRound,
   Settings,
   HelpCircle,
   BarChart3,
@@ -48,9 +47,9 @@ export const DASHBOARD_NAV: NavSection[] = [
   {
     title: 'Build',
     items: [
-      { label: 'Websites', href: '/dashboard/websites', icon: Globe, status: 'soon', phase: '7.2.3' },
+      { label: 'Websites', href: '/dashboard/websites', icon: Globe, status: 'ready' },
       { label: 'Templates', href: '/dashboard/templates', icon: LayoutTemplate, status: 'ready' },
-      { label: 'AI Generator', href: '/dashboard/ai-generator', icon: Sparkles, status: 'soon', phase: '7.2.4' },
+      { label: 'AI Generator', href: '/dashboard/ai-generator', icon: Sparkles, status: 'ready' },
     ],
   },
   {
@@ -64,8 +63,8 @@ export const DASHBOARD_NAV: NavSection[] = [
   {
     title: 'Publish',
     items: [
-      { label: 'Deployments', href: '/dashboard/deployments', icon: Rocket, status: 'soon', phase: '8' },
-      { label: 'Domains', href: '/dashboard/domains', icon: Link2, status: 'soon', phase: '8.5' },
+      { label: 'Deployments', href: '/dashboard/deployments', icon: Rocket, status: 'ready' },
+      { label: 'Domains', href: '/dashboard/domains', icon: Link2, status: 'ready' },
     ],
   },
   {
@@ -84,16 +83,10 @@ export const DASHBOARD_NAV: NavSection[] = [
     ],
   },
   {
-    title: 'Organization',
-    items: [
-      { label: 'API Keys', href: '/dashboard/api-keys', icon: KeyRound, status: 'soon', phase: '10' },
-    ],
-  },
-  {
     title: 'System',
     items: [
       { label: 'Preferences', href: '/dashboard/preferences', icon: SlidersHorizontal, status: 'ready' },
-      { label: 'Settings', href: '/dashboard/settings', icon: Settings, status: 'soon', phase: '7.2.2+' },
+      { label: 'Settings', href: '/dashboard/settings', icon: Settings, status: 'ready' },
       { label: 'Help', href: '/dashboard/help', icon: HelpCircle, status: 'ready' },
     ],
   },
