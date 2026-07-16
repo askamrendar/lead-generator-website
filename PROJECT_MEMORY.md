@@ -221,6 +221,23 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **In-process background worker (zero-cron job processing)** — ✅ VERIFIED (2026-07-17): all six gates green
+  (test 151/151, sitemap 66) **+ live runtime proof**: queued a `blog.generate` job with NO manual worker call →
+  the inline worker picked it up automatically within one 5s tick → SUCCEEDED, article created ("Panel Upgrades:
+  What You Need to Know"). *Objective:* close the "Running background worker — needs external cron" blocker for
+  long-lived deployments (Railway/Docker): generation jobs previously sat QUEUED forever unless something POSTed
+  `/api/jobs/run`. *Files:* `instrumentation.ts` (Next 15 native hook; when `NEXT_RUNTIME==='nodejs'` and
+  `JOBS_WORKER_TOKEN` is set, an interval self-fetches the app's OWN token-gated `/api/jobs/run` over loopback —
+  the single existing worker implementation; `WORKER_INLINE=0` opts out, `WORKER_INTERVAL_SECONDS` tunes cadence,
+  default 15s; ticks serialized, errors log-only), `.env.example` (+worker envs). *Decision — self-fetch, not
+  direct import:* Next bundles `instrumentation.ts` for every runtime and webpack REJECTS `node:` schemes in that
+  bundle (`UnhandledSchemeError`); importing `lib/jobs/handlers` transitively pulls `node:crypto`/`node:fs` and
+  breaks the build. Looping over HTTP reuses the endpoint's auth/maxDuration/reaper semantics and keeps external
+  cron + inline worker safe together (atomic QUEUED→RUNNING claim). *Deployment note:* Railway already has
+  `JOBS_WORKER_TOKEN` set → worker turns on automatically at next deploy; serverless (Vercel) stays on external
+  cron. *Lessons:* instrumentation runs in BOTH runtimes' bundles — anything Node-only there must be reached via
+  fetch or guarded dynamic import of webpack-safe modules only. *Next:* Railway live re-verify (generate → auto-
+  process without curl).
 - **BYO AI keys + AI images + all-SOON-removed (first-time AI onboarding)** — ✅ VERIFIED (2026-07-17): all six
   gates green (test 151/151, sitemap 66) **+ full browser-driven E2E via Chrome DevTools Protocol on a prod
   server**: real UI login → Settings → AI Providers → saved an Anthropic key (stored `enc:v1:` encrypted,
