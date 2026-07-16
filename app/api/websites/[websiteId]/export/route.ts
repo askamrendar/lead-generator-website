@@ -3,6 +3,7 @@ import { requireWebsiteAccess, accessErrorResponse } from '@/lib/auth/access';
 import { serverError } from '@/lib/api/security';
 import { prisma } from '@/lib/db/prisma';
 import { exportStaticSite } from '@/lib/export/static-site';
+import { resolveSiteUrl } from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -55,13 +56,15 @@ export async function GET(
       select: { hostname: true },
     });
 
-    // Self-fetch pages from THIS server instance (the request's own origin),
-    // forwarding the caller's cookies so owner-only (unpublished) sites render.
-    const reqUrl = new URL(request.url);
+    // Self-fetch pages from THIS server instance over loopback — NOT the public
+    // origin: behind a TLS-terminating proxy (Railway/most PaaS) the container
+    // can't dial its own public https host ("wrong version number" SSL errors).
+    // The caller's cookies are forwarded so owner-only (unpublished) sites render.
+    const port = process.env.PORT || new URL(request.url).port || '3000';
     const result = await exportStaticSite(websiteId, {
-      appOrigin: `${reqUrl.protocol}//${reqUrl.host}`,
+      appOrigin: `http://127.0.0.1:${port}`,
       cookie: request.headers.get('cookie') ?? undefined,
-      siteOrigin: domain ? `https://${domain.hostname}` : undefined,
+      siteOrigin: domain ? `https://${domain.hostname}` : `${resolveSiteUrl()}/sites/${websiteId}`,
     });
     if (!result) {
       return NextResponse.json(
