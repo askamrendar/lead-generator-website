@@ -548,6 +548,25 @@ or record it as verified on gate results that were not run.
 ## 19 · Session Log (append-only; newest first)
 > Template: `Date · Objective · Files Modified · Architecture Changes · Issues Found · Issues Fixed · Remaining Work · Next Task`
 
+- **2026-07-17 (Website Generator COMPLETE — Railway production-verified)** — *Objective:* resume from
+  `feat: BYO AI keys…`, finish the generator, verify everything live on Railway. *Shipped:* (1) **in-process
+  background worker** (`instrumentation.ts` self-fetches `/api/jobs/run` over loopback every 15s when
+  `JOBS_WORKER_TOKEN` is set — jobs process with zero external cron; `WORKER_INLINE=0` opts out); (2) **export
+  loopback fix** — self-fetch via the public https origin fails behind Railway's TLS proxy (OpenSSL "wrong
+  version number") → fetch `http://127.0.0.1:$PORT` instead; canonical origin still stamped from domain/env.
+  *Railway E2E (production, real UI via CDP browser):* register → login (redirect lands on Railway origin — the
+  old localhost:8080 bug is env-fixed via AUTH_URL) → wizard created "Mile High Roofing" (Colorado dropdown,
+  additional cities Aurora+Lakewood) → clicked Generate → **inline worker auto-processed it** (GENERATED,
+  roofing industry) → all 9+ page types 200 with owner session, anon draft 404 (fail-closed) → **static ZIP
+  export 200 on Railway** (21 pages, real zip, 0 sample leaks, form posts to the Railway /api/lead) → clicked
+  Deploy → **QUEUED→READY processed automatically** by the inline worker. Gates green ×2 this session
+  (151/151, sitemap 66). *Commits:* `bc1188b` (worker), `c4dd271` (export fix) — pushed, auto-deployed
+  (deployments 77f3b625, b5bf13cc SUCCESS). *Railway env now complete:* AUTH_URL + SECRET_ENCRYPTION_KEY +
+  JOBS_WORKER_TOKEN all set. *Remaining (non-generator):* email provider (verification copy), object storage,
+  cloud-deploy providers, Redis, GA4/GSC — all external-creds-gated; code-only debt list unchanged (§ TODO.md).
+  *Test data on production:* user railway-verify-0717@example.com + "Mile High Roofing" (DRAFT) left in place
+  for the owner's manual testing. *Next task:* owner UAT on Railway; then Phase 10 provider wiring or code-only
+  debt.
 - **2026-07-16 (True AI Website Generator M1–M7 — resumed & completed)** — *Objective:* resume the interrupted
   generator build (M1–M3+M5 were on disk uncommitted; M4/M6/M7 unbuilt) and close the 2026-07-16 UAT criticals.
   *Outcome:* all six gates green (**142/142**, sitemap 66) + full live runtime E2E (prod server :3210): tenant
