@@ -22,7 +22,7 @@ test('wizardToBusinessConfig maps identity + contact', () => {
   assert.equal(cfg.category, 'Plumbing');
   assert.equal(cfg.phone, '512-555-0100');
   assert.equal(cfg.address.city, 'Austin');
-  assert.equal(cfg.address.stateAbbr, 'TE'); // first 2 letters upper
+  assert.equal(cfg.address.stateAbbr, 'TX'); // USPS abbr via the geo pack
   assert.equal(cfg.address.zip, '78701');
 });
 
@@ -47,4 +47,48 @@ test('wizardToBusinessConfig output is a valid generator config', async () => {
   const cfg = wizardToBusinessConfig(sampleWizard);
   const parsed = businessConfigSchema.safeParse(cfg);
   assert.equal(parsed.success, true, parsed.success ? '' : JSON.stringify(parsed.error.issues));
+});
+
+test('adapter resolves ANY US state (name or abbr) to the correct USPS code', () => {
+  const cases = [
+    ['New york', 'NY', 'New York'],
+    ['ny', 'NY', 'New York'],
+    ['california', 'CA', 'California'],
+    ['FL', 'FL', 'Florida'],
+    ['washington', 'WA', 'Washington'],
+    ['North carolina', 'NC', 'North Carolina'],
+  ];
+  for (const [typed, abbr, name] of cases) {
+    const cfg = wizardToBusinessConfig({
+      ...sampleWizard,
+      location: { ...sampleWizard.location, state: typed, city: 'Anytown' },
+    });
+    assert.equal(cfg.address.stateAbbr, abbr, `typed "${typed}"`);
+    assert.equal(cfg.states[0].name, name, `typed "${typed}"`);
+    assert.equal(cfg.states[0].abbr, abbr, `typed "${typed}"`);
+  }
+});
+
+test('adapter supports additional cities (deduped, primary first)', () => {
+  const cfg = wizardToBusinessConfig({
+    ...sampleWizard,
+    location: {
+      ...sampleWizard.location,
+      city: 'Austin',
+      additionalCities: ['Round Rock', 'Cedar Park', 'austin', 'Round Rock'],
+    },
+  });
+  assert.deepEqual(
+    cfg.states[0].cities.map((c) => c.name),
+    ['Austin', 'Round Rock', 'Cedar Park'],
+  );
+});
+
+test('adapter cleans malformed ZIP input (the Empire UAT case)', () => {
+  const cfg = wizardToBusinessConfig({
+    ...sampleWizard,
+    location: { ...sampleWizard.location, zipCodes: ['87496 76032', 'bad'] },
+  });
+  assert.deepEqual(cfg.states[0].cities[0].zips, ['87496', '76032']);
+  assert.equal(cfg.address.zip, '87496');
 });

@@ -1,5 +1,6 @@
 import type { WebsiteWizardInput } from '@/lib/websites/schema';
 import type { BusinessConfigInput } from '@/lib/generator/schema';
+import { findUsState, usStateAbbr, cleanUsZips } from '../geo/us-states.ts';
 
 /**
  * Pure adapter: wizard `businessConfig` (stored on Website) → generator
@@ -53,11 +54,33 @@ export function wizardToBusinessConfig(wizard: WebsiteWizardInput): BusinessConf
       shortDescription: `Professional ${name.toLowerCase()} for homes and businesses in ${location.city}.`,
     }));
 
-  const cityEntry = {
-    name: location.city,
-    zips: location.zipCodes ?? [],
-    neighborhoods: location.neighborhoods ?? [],
-  };
+  // Canonical state resolution via the USA geo pack: "new york"/"ny"/"New York"
+  // all resolve to { name: 'New York', abbr: 'NY' }. Unknown (non-US) states keep
+  // the typed name with a best-effort 2-letter abbreviation.
+  const usState = findUsState(location.state);
+  const stateName = usState?.name ?? location.state;
+  const stateAbbr = usState?.abbr ?? usStateAbbr(location.state);
+
+  // Validate/split/dedupe ZIPs ("87496 76032" → two entries; invalid dropped).
+  const zips = cleanUsZips(location.zipCodes ?? []);
+
+  // Primary city + any additional cities (deduped, primary first). Each city gets
+  // its own location page + service×city pages from the engine's selectors.
+  const extraCities = (location.additionalCities ?? []).filter(
+    (c) => c.toLowerCase() !== location.city.toLowerCase(),
+  );
+  const cities = [
+    {
+      name: location.city,
+      zips,
+      neighborhoods: location.neighborhoods ?? [],
+    },
+    ...Array.from(new Set(extraCities.map((c) => c.trim()).filter(Boolean))).map((name) => ({
+      name,
+      zips: [] as string[],
+      neighborhoods: [] as string[],
+    })),
+  ];
 
   return {
     // Identity
@@ -76,10 +99,9 @@ export function wizardToBusinessConfig(wizard: WebsiteWizardInput): BusinessConf
       // requires a non-empty value.
       street: `${location.city} Service Area`,
       city: location.city,
-      state: location.state,
-      // Best-effort 2-letter abbreviation; generator schema requires length 2.
-      stateAbbr: location.state.trim().slice(0, 2).toUpperCase(),
-      zip: (location.zipCodes && location.zipCodes[0]) || '00000',
+      state: stateName,
+      stateAbbr,
+      zip: zips[0] || '00000',
     },
 
     // Brand — map hex wizard colors to HSL triplets the theme system expects.
@@ -92,13 +114,13 @@ export function wizardToBusinessConfig(wizard: WebsiteWizardInput): BusinessConf
     primaryService: business.primaryService,
     services: services.length > 0 ? services : [{ name: business.category, shortDescription: `${business.category} services.` }],
 
-    // Geography — one state with the collected city.
+    // Geography — the resolved state with the primary + additional cities.
     country: location.country || 'United States',
     states: [
       {
-        name: location.state,
-        abbr: location.state.trim().slice(0, 2).toUpperCase(),
-        cities: [cityEntry],
+        name: stateName,
+        abbr: stateAbbr,
+        cities,
       },
     ],
 

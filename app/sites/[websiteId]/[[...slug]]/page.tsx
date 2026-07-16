@@ -59,9 +59,14 @@ export async function generateMetadata({
     path: rendered.route.path,
     noindex: true, // app-origin surface; the custom domain is the canonical home
   });
-  // Absolute title: tenant sites must not inherit the app root layout's
-  // `%s | <sample business>` title template.
-  return { ...meta, title: { absolute: String(meta.title) } };
+  // Absolute title + own application/author identity: tenant sites must not
+  // inherit the app root layout's `%s | <sample business>` template or meta.
+  return {
+    ...meta,
+    title: { absolute: String(meta.title) },
+    applicationName: bundle.business.name,
+    authors: [{ name: bundle.business.name }],
+  };
 }
 
 export default async function SitePage({

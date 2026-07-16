@@ -64,7 +64,12 @@ export async function generateMetadata({
     description: rendered.ctx.content.metaDescription,
     path: rendered.route.path,
   });
-  return { ...meta, title: { absolute: String(meta.title) } };
+  return {
+    ...meta,
+    title: { absolute: String(meta.title) },
+    applicationName: bundle.business.name,
+    authors: [{ name: bundle.business.name }],
+  };
 }
 
 export default async function HostedSitePage({ params }: { params: Promise<Params> }) {

@@ -33,6 +33,8 @@ export const locationStepSchema = z.object({
   country: z.string().trim().min(2).max(60).default('United States'),
   state: z.string().trim().min(2, 'Enter a state').max(60),
   city: z.string().trim().min(2, 'Enter a city').max(80),
+  /** Additional cities served (comma/newline separated) — each gets its own pages. */
+  additionalCities: csvList,
   zipCodes: csvList,
   neighborhoods: csvList,
 });

@@ -17,6 +17,8 @@ import {
   seoStepSchema,
 } from '@/lib/websites/schema';
 import { createWebsiteAction } from '@/app/dashboard/websites/actions';
+import { US_STATES, findUsState } from '@/lib/geo/us-states';
+import { citiesForState } from '@/lib/geo/us-cities';
 
 /**
  * Guided website-creation wizard. Collects configuration ONLY (no generation). Each
@@ -50,6 +52,7 @@ const INITIAL: Form = {
   country: 'United States',
   state: '',
   city: '',
+  additionalCities: '',
   zipCodes: '',
   neighborhoods: '',
   logoUrl: '',
@@ -71,7 +74,7 @@ const INITIAL: Form = {
 
 const STEP_FIELDS: string[][] = [
   ['businessName', 'category', 'primaryService', 'additionalServices'],
-  ['country', 'state', 'city', 'zipCodes', 'neighborhoods'],
+  ['country', 'state', 'city', 'additionalCities', 'zipCodes', 'neighborhoods'],
   ['logoUrl', 'primaryColor', 'accentColor', 'fontFamily'],
   ['phone', 'email', 'hours', 'website', 'facebook', 'instagram', 'x'],
   ['targetKeywords', 'competitors', 'servicePages', 'locationPages'],
@@ -88,7 +91,7 @@ export function WebsiteWizard({ workspaceId }: { workspaceId: string }) {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [pending, startTransition] = React.useTransition();
 
-  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
   function validateStep(i: number): boolean {
@@ -213,7 +216,7 @@ function Stepper({ step }: { step: number }) {
 
 type StepProps = {
   form: Form;
-  set: (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  set: (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   errors: Record<string, string>;
 };
 
@@ -330,6 +333,9 @@ function BusinessStep({ form, set, errors }: StepProps) {
 }
 
 function LocationStep({ form, set, errors }: StepProps) {
+  const isUS = /united states|usa|^us$/i.test(form.country?.trim() ?? '');
+  const stateRecord = findUsState(form.state ?? '');
+  const citySuggestions = stateRecord ? citiesForState(stateRecord.abbr) : [];
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
@@ -337,13 +343,57 @@ function LocationStep({ form, set, errors }: StepProps) {
           <Input value={form.country} onChange={set('country')} />
         </FormField>
         <FormField id="state" label="State" error={errors.state} required>
-          <Input value={form.state} onChange={set('state')} placeholder="Texas" />
+          {isUS ? (
+            <select
+              id="state"
+              value={stateRecord?.name ?? form.state}
+              onChange={set('state')}
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <option value="">Select a state…</option>
+              {US_STATES.map((s) => (
+                <option key={s.abbr} value={s.name}>
+                  {s.name} ({s.abbr})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input value={form.state} onChange={set('state')} placeholder="State / province" />
+          )}
         </FormField>
         <FormField id="city" label="City" error={errors.city} required>
-          <Input value={form.city} onChange={set('city')} placeholder="Austin" />
+          <>
+            <Input
+              value={form.city}
+              onChange={set('city')}
+              placeholder={citySuggestions[0] ?? 'Austin'}
+              list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
+            />
+            {citySuggestions.length > 0 ? (
+              <datalist id="city-suggestions">
+                {citySuggestions.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            ) : null}
+          </>
         </FormField>
       </div>
-      <FormField id="zipCodes" label="ZIP codes" hint="Comma separated.">
+      <FormField
+        id="additionalCities"
+        label="Additional cities served"
+        hint="Comma separated — each city gets its own location + service pages."
+      >
+        <>
+          <Input
+            value={form.additionalCities}
+            onChange={set('additionalCities')}
+            placeholder={citySuggestions.slice(1, 4).join(', ') || 'Round Rock, Cedar Park'}
+            list={citySuggestions.length > 0 ? 'city-suggestions' : undefined}
+          />
+        </>
+      </FormField>
+      <FormField id="zipCodes" label="ZIP codes" hint="Comma separated, 5-digit (e.g. 78701). Invalid entries are dropped.">
         <Input value={form.zipCodes} onChange={set('zipCodes')} placeholder="78701, 78702" />
       </FormField>
       <FormField id="neighborhoods" label="Neighborhoods" hint="Comma separated.">
