@@ -50,6 +50,9 @@ export function sanitizeApiKey(raw: string): string {
     .replace(/^\s*(authorization\s*:)?\s*bearer\s+/i, '');
   // Strip whitespace + invisible Unicode (zero-width, BOM, NBSP, direction marks).
   key = key.replace(/[\s\u0000-\u001f\u007f\u00a0\u200b-\u200f\u2028\u2029\ufeff]/g, '');
+  // Mobile/browser autocapitalize turns "sk-…" into "Sk-…" — provider key
+  // prefixes are always lowercase, so normalize just the known prefix.
+  key = key.replace(/^(SK|Sk|sK)-(or|ant|proj)?/, (m) => m.toLowerCase());
   return key;
 }
 
