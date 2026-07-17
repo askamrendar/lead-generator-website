@@ -35,6 +35,24 @@ interface StoredCreds {
   updatedAt?: string;
 }
 
+/**
+ * Sanitize a pasted API key: strip ALL whitespace (incl. line-wraps from
+ * terminals/emails) and invisible Unicode (zero-width spaces, BOM, NBSP,
+ * directional marks) that ride along with copy-paste. Real API keys never
+ * contain any of these — a stray one produces confusing provider 401s like
+ * OpenRouter's "Missing Authentication header".
+ */
+export function sanitizeApiKey(raw: string): string {
+  let key = raw
+    // Quotes copied from .env files / JSON snippets.
+    .replace(/["'`]/g, '')
+    // A pasted "Bearer <key>" or "Authorization: Bearer <key>" line.
+    .replace(/^\s*(authorization\s*:)?\s*bearer\s+/i, '');
+  // Strip whitespace + invisible Unicode (zero-width, BOM, NBSP, direction marks).
+  key = key.replace(/[\s\u0000-\u001f\u007f\u00a0\u200b-\u200f\u2028\u2029\ufeff]/g, '');
+  return key;
+}
+
 function mask(key: string): string {
   if (key.length <= 8) return '••••';
   return `${key.slice(0, 3)}…${key.slice(-4)}`;
@@ -120,7 +138,7 @@ export async function saveAiCredentials(
 ): Promise<void> {
   await requireWorkspaceAccess(workspaceId, 'workspace:update');
   if (!PROVIDERS.includes(input.provider)) throw new Error('Unknown provider.');
-  const apiKey = input.apiKey.trim();
+  const apiKey = sanitizeApiKey(input.apiKey);
   if (apiKey.length < 8) throw new Error('Enter a valid API key.');
 
   const stored: StoredCreds = {
@@ -170,7 +188,7 @@ export async function testAiCredentials(
   if (!PROVIDERS.includes(input.provider)) return { ok: false, message: 'Unknown provider.' };
   try {
     const result = await withAiCredentials(
-      { provider: input.provider, apiKey: input.apiKey.trim(), model: input.model?.trim() || undefined },
+      { provider: input.provider, apiKey: sanitizeApiKey(input.apiKey), model: input.model?.trim() || undefined },
       () =>
         getProviderByName(input.provider).complete({
           prompt: 'Reply with the single word: ok',
@@ -184,7 +202,15 @@ export async function testAiCredentials(
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Connection failed.';
-    // Trim provider error bodies to a single readable line.
-    return { ok: false, message: msg.split('\n')[0]!.slice(0, 300) };
+    // Trim provider error bodies to a single readable line, and translate the
+    // common auth failures into actionable guidance.
+    const line = msg.split('\n')[0]!.slice(0, 300);
+    if (/401|unauthorized|invalid.*key|authentication/i.test(line)) {
+      return {
+        ok: false,
+        message: `${line} — check that the key was copied completely (no spaces or line breaks) and is active on the provider's dashboard.`,
+      };
+    }
+    return { ok: false, message: line };
   }
 }
