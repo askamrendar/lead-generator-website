@@ -84,7 +84,9 @@ async function generateWebsiteCoreInner(websiteId: string): Promise<GenerateResu
       status: 'GENERATED',
       generatedAt: new Date(),
       themeId: selection.themeId,
-      templateId: selection.template.id,
+      // Sites serve through the royal-oak HTML template (the only template);
+      // the block selection above still powers the Visual Builder's draft doc.
+      templateId: 'royal-oak',
       industryId: selection.industry.id,
     },
   });

@@ -287,3 +287,43 @@ export async function renderSitePage(
 
   return { route, page, ctx, themeId, contentSource: source };
 }
+
+// ---------------------------------------------------------------------------
+// HTML-template rendering (royal-oak) — the serving path for tenant sites
+// ---------------------------------------------------------------------------
+
+import { generateHtmlSite, normalizePath, type HtmlSite } from '@/lib/htmlgen/engine';
+
+export interface HtmlRenderOptions {
+  /** Canonical public origin (custom domain, else the app /sites URL). */
+  origin: string;
+  /** Link prefix when served inside the app ('' at a domain root / export). */
+  base: string;
+  /** Asset prefix override (export uses relative "assets"). */
+  assets?: string;
+  /** Origin the lead form posts to (this app). */
+  appOrigin: string;
+}
+
+/**
+ * Build the full HTML site for a bundle via the royal-oak template. Content is
+ * cache-first (AI when warmed, deterministic otherwise), so this is cheap and
+ * repeatable — surfaces call it per request; ISR/CDN caching sits above.
+ */
+export async function renderHtmlSite(bundle: SiteBundle, opts: HtmlRenderOptions): Promise<HtmlSite> {
+  return generateHtmlSite(bundle.business, opts);
+}
+
+/** Render one page (or sitemap/robots) of a website's HTML site. */
+export async function renderHtmlPage(
+  bundle: SiteBundle,
+  path: string,
+  opts: HtmlRenderOptions,
+): Promise<{ body: string; contentType: string } | null> {
+  const clean = normalizePath(path);
+  const site = await generateHtmlSite(bundle.business, opts);
+  if (clean === '/sitemap.xml') return { body: site.sitemapXml, contentType: 'application/xml; charset=utf-8' };
+  if (clean === '/robots.txt') return { body: site.robotsTxt, contentType: 'text/plain; charset=utf-8' };
+  const page = site.pages.find((p) => p.path === clean);
+  return page ? { body: page.html, contentType: 'text/html; charset=utf-8' } : null;
+}

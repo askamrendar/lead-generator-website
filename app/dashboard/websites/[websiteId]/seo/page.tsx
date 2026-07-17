@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { Search, ExternalLink } from 'lucide-react';
 import { getWebsite } from '@/lib/websites/service';
-import { businessFromWizard, websiteRoutes } from '@/lib/websites/render-service';
+import { businessFromWizard } from '@/lib/websites/render-service';
+import { generateHtmlSite } from '@/lib/htmlgen/engine';
+import { resolveSiteUrl } from '@/lib/site';
 import { isAccessError } from '@/lib/auth/access';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,9 +40,21 @@ export default async function WebsiteSeoPage({
     );
   }
 
-  const routes = websiteRoutes(business);
-  const byType = new Map<string, number>();
-  for (const r of routes) byType.set(r.pageType, (byType.get(r.pageType) ?? 0) + 1);
+  const appOrigin = resolveSiteUrl();
+  const site = await generateHtmlSite(business, {
+    origin: `${appOrigin}/sites/${websiteId}`,
+    base: `/sites/${websiteId}`,
+    appOrigin,
+  });
+  const routes = site.pages.map((p) => ({
+    path: p.path,
+    title: p.title,
+    pageType:
+      p.path === '/' ? 'home'
+      : p.path.startsWith('/services/') ? 'service'
+      : p.path.startsWith('/near-me/') ? 'area'
+      : p.path.replace(/^\//, '').replace(/-us$/, '') || 'page',
+  }));
 
   return (
     <div className="space-y-6">

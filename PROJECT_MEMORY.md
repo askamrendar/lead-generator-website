@@ -221,6 +221,32 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **Royal-Oak HTML template — the ONE site template (user-provided design)** — ✅ VERIFIED (2026-07-17): all six
+  gates green (test 156/156, app sitemap 66) + local runtime E2E (royal-oak site served for Peach State Electric:
+  home/about-us/contact-us/services/per-service/near-me all 200, **/sitemap.xml (10 URLs) + /robots.txt served
+  per-site**, bogus 404; export ZIP = 11 HTML pages + full asset bundle with depth-relative links; browser
+  screenshots confirm the original design: sticky blue nav, hero + Get-Free-Quote form, process/why sections).
+  *Objective (user directive):* replace ALL previous block templates/website data with a single template cloned
+  section-by-section from `royaloakmoldremoval.com-static-website.zip` (~/Downloads/Website backup); more packs
+  to come later; per-site sitemap required. *Files added:* `templates/html/royal-oak/sections.ts` (pure string
+  section builders ported from the original markup: pageShell head/header/footer chrome, hero+lead-form, inner
+  banner, feature-s6 services grid, content article, cta-small band, owl-carousel testimonials, details/summary
+  FAQ, bottom CTA, contact info+form+map; brand colors via the original `--primary/--secondary` CSS vars from
+  BusinessConfig HSL; third-party leadsmart iframe REPLACED with a plain form → our /api/lead),
+  `lib/htmlgen/engine.ts` (BusinessConfig → full HtmlSite: /, /about-us, /contact-us, /services,
+  /services/<svc>, /near-me, /near-me/<area> (neighborhoods, else cities), per-site sitemap.xml + robots.txt;
+  copy from the EXISTING resolvePageContent — AI-cached or deterministic), `public/templates/royal-oak/assets`
+  (original css/js/fonts bundle, 3.2 MB — served by Next static + copied into exports). *Files replaced:*
+  `/sites` + `/hosted` page.tsx → **route handlers** returning template HTML (published public / draft
+  owner-only 404; hosted = canonical domain origin + 308 redirectTo; s-maxage=300), `lib/export/static-site.ts`
+  (direct htmlgen render — self-fetch machinery GONE; assets bundled from public/), SEO tab page-map reads
+  htmlgen, generation stamps `templateId='royal-oak'`. *Deleted:* `components/site-render/*`,
+  `lib/export/static-blocks.tsx`. Old block-template registry stays (Visual Builder still edits the draft doc)
+  but no longer serves sites. *Decisions:* sections as typed string-builders (not tokenized raw HTML) so AI/
+  deterministic content feeds them; areas = neighborhoods-first fallback cities (mirrors the original's
+  near-me IA). *Tech debt:* hero background is a brand-gradient when no heroImage; testimonials carousel uses
+  the template's owl JS; Visual Builder edits don't yet affect the served HTML (template is config+AI-driven).
+  *Next:* Railway deploy + live re-test; more template packs as `templates/html/<name>` siblings.
 - **In-process background worker (zero-cron job processing)** — ✅ VERIFIED (2026-07-17): all six gates green
   (test 151/151, sitemap 66) **+ live runtime proof**: queued a `blog.generate` job with NO manual worker call →
   the inline worker picked it up automatically within one 5s tick → SUCCEEDED, article created ("Panel Upgrades:
