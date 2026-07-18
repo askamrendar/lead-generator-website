@@ -15,6 +15,7 @@ import { resolvePageContent } from '@/lib/ai/render';
 import { localBusinessSchema } from '@/lib/seo/schema';
 import { telHref, formatPhone } from '@/lib/utils';
 import { getHtmlPack } from '@/templates/html/registry';
+import { applyPageOverride, type ContentOverrides } from '@/lib/websites/content-overrides';
 import type { PackChrome, PackCard } from '@/templates/html/types';
 import type { BusinessConfig } from '@/lib/generator/schema';
 import type { GeneratedPageContent, PageContext } from '@/lib/ai/types';
@@ -60,6 +61,8 @@ export interface HtmlGenOptions {
   appOrigin: string;
   /** HTML pack id (aliases resolved; defaults to Template 1). */
   templateId?: string;
+  /** Per-page Site Editor content overrides, keyed by site-relative path. */
+  overrides?: ContentOverrides;
 }
 
 interface AreaRef {
@@ -125,11 +128,6 @@ function chromeFor(business: BusinessConfig, opts: HtmlGenOptions, defaultAssets
   };
 }
 
-async function content(ctx: PageContext): Promise<GeneratedPageContent> {
-  const { content } = await resolvePageContent(ctx);
-  return content;
-}
-
 /** Generate the full site: every page + sitemap + robots. */
 export async function generateHtmlSite(
   business: BusinessConfig,
@@ -141,6 +139,12 @@ export async function generateHtmlSite(
   const areas = areasFor(business);
   const jsonLd = JSON.stringify(localBusinessSchema(business)).replace(/</g, '\\u003c');
   const pages: HtmlPage[] = [];
+
+  /** Resolve page content, then merge any Site Editor override for its path. */
+  const content = async (ctx: PageContext, path: string): Promise<GeneratedPageContent> => {
+    const { content } = await resolvePageContent(ctx);
+    return applyPageOverride(content, opts.overrides?.[path]);
+  };
 
   const serviceCards: PackCard[] = services.map((s) => ({
     label: s.name,
@@ -154,7 +158,7 @@ export async function generateHtmlSite(
   }));
 
   // --- Home ---
-  const home = await content(buildHomeContext(business));
+  const home = await content(buildHomeContext(business), '/');
   pages.push({
     path: '/',
     title: home.seoTitle,
@@ -176,7 +180,7 @@ export async function generateHtmlSite(
   });
 
   // --- About ---
-  const about = await content(buildAboutContext(business));
+  const about = await content(buildAboutContext(business), '/about-us');
   pages.push({
     path: '/about-us',
     title: about.seoTitle,
@@ -192,7 +196,7 @@ export async function generateHtmlSite(
   });
 
   // --- Contact ---
-  const contact = await content(buildContactContext(business));
+  const contact = await content(buildContactContext(business), '/contact-us');
   pages.push({
     path: '/contact-us',
     title: contact.seoTitle,
@@ -232,8 +236,8 @@ export async function generateHtmlSite(
   for (const s of services) {
     const ctx = buildServiceContext(business, s.slug);
     if (!ctx) continue;
-    const c = await content(ctx);
     const path = `/services/${s.slug}`;
+    const c = await content(ctx, path);
     pages.push({
       path,
       title: c.seoTitle,
@@ -275,8 +279,8 @@ export async function generateHtmlSite(
   // --- Area pages (only from user-provided locations) ---
   for (const a of areas) {
     if (!a.ctx) continue;
-    const c = await content(a.ctx);
     const path = `/near-me/${a.slug}`;
+    const c = await content(a.ctx, path);
     pages.push({
       path,
       title: c.seoTitle,
@@ -305,6 +309,35 @@ export async function generateHtmlSite(
 export function normalizePath(path: string): string {
   const clean = ('/' + path.replace(/^\/+|\/+$/g, '')).replace(/\/{2,}/g, '/');
   return clean === '' ? '/' : clean;
+}
+
+export interface ContentPageRef {
+  /** Site-relative path — the Site Editor override key. */
+  path: string;
+  /** Human label for editor navigation. */
+  label: string;
+  group: 'core' | 'service' | 'area';
+  ctx: PageContext;
+}
+
+/**
+ * Every content-editable page of a site (same route map as generateHtmlSite,
+ * without rendering). The Site Editor lists these and keys overrides by path.
+ */
+export function enumerateContentPages(business: BusinessConfig): ContentPageRef[] {
+  const pages: ContentPageRef[] = [
+    { path: '/', label: 'Home', group: 'core', ctx: buildHomeContext(business) },
+    { path: '/about-us', label: 'About Us', group: 'core', ctx: buildAboutContext(business) },
+    { path: '/contact-us', label: 'Contact Us', group: 'core', ctx: buildContactContext(business) },
+  ];
+  for (const s of getServices(business)) {
+    const ctx = buildServiceContext(business, s.slug);
+    if (ctx) pages.push({ path: `/services/${s.slug}`, label: s.name, group: 'service', ctx });
+  }
+  for (const a of areasFor(business)) {
+    if (a.ctx) pages.push({ path: `/near-me/${a.slug}`, label: a.name, group: 'area', ctx: a.ctx });
+  }
+  return pages;
 }
 
 export function buildSitemap(origin: string, paths: string[]): string {

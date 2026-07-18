@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { Paintbrush, Sparkles } from 'lucide-react';
+import { Download, Eye, Paintbrush, Sparkles } from 'lucide-react';
 import { getWebsite } from '@/lib/websites/service';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,7 +75,7 @@ export default async function WebsiteOverviewPage({
         <Card className="p-5">
           <h2 className="text-sm font-semibold text-foreground">Next steps</h2>
           <p className="mt-1 text-sm text-muted-fg">
-            Generate content and edit this website (available in upcoming milestones).
+            Generate content, preview the live site, and download it as a static ZIP.
           </p>
           <div className="mt-4 flex flex-col gap-2">
             <Button asChild variant="outline">
@@ -85,10 +85,23 @@ export default async function WebsiteOverviewPage({
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href={websiteHref(website.id, 'builder')}>
+              <Link href={`/editor/${website.id}`}>
                 <Paintbrush aria-hidden />
-                Open builder
+                Edit site content
               </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={`/sites/${website.id}`} target="_blank" rel="noopener noreferrer">
+                <Eye aria-hidden />
+                Preview site
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              {/* Plain <a>: Next Link would prefetch the export API on hover. */}
+              <a href={`/api/websites/${website.id}/export`}>
+                <Download aria-hidden />
+                Download ZIP
+              </a>
             </Button>
           </div>
         </Card>

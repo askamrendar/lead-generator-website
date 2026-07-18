@@ -8,6 +8,7 @@ import {
 } from '@/lib/domains/dns';
 import { checkTxtVerification } from '@/lib/domains/verify';
 import { getDomainProvider, listDomainProviders } from '@/lib/domains/providers';
+import { resolveSiteUrl } from '@/lib/site';
 import { decryptSecretMap } from '@/lib/security/secrets';
 import type { DomainDTO, DomainProviderHealth, DomainProviderId } from '@/lib/domains/types';
 
@@ -32,6 +33,17 @@ type DomainRow = {
   verifiedAt: Date | null;
 };
 
+/** The REAL host serving this deployment — custom-domain DNS must point here. */
+function platformHost(): string {
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railway) return railway.toLowerCase();
+  try {
+    return new URL(resolveSiteUrl()).hostname;
+  } catch {
+    return 'localhost';
+  }
+}
+
 function toDTO(r: DomainRow): DomainDTO {
   return {
     id: r.id,
@@ -45,7 +57,7 @@ function toDTO(r: DomainRow): DomainDTO {
     redirectTo: r.redirectTo,
     createdAt: r.createdAt.toISOString(),
     verifiedAt: r.verifiedAt?.toISOString() ?? null,
-    records: expectedRecords(r.hostname, r.verificationToken),
+    records: expectedRecords(r.hostname, r.verificationToken, platformHost()),
   };
 }
 

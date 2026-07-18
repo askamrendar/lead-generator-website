@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { BadgeCheck, ChevronDown, Globe, Plus, Star, Trash2 } from 'lucide-react';
+import { BadgeCheck, ChevronDown, Copy as CopyIcon, Globe, Plus, Star, Trash2 } from 'lucide-react';
 import { Panel } from '@/components/ui/panel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,11 +103,11 @@ export function DomainManager({
               </div>
               {expanded === d.id ? (
                 <div className="border-t border-border bg-muted/30 px-4 py-3">
-                  <p className="mb-2 text-xs font-medium text-muted-fg">Add these DNS records at your registrar:</p>
+                  <p className="mb-2 text-xs font-medium text-muted-fg">Add these DNS records at your DNS provider (Cloudflare recommended):</p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="text-muted-fg">
-                        <tr><th className="py-1 pr-4">Type</th><th className="py-1 pr-4">Name</th><th className="py-1 pr-4">Value</th></tr>
+                        <tr><th className="py-1 pr-4">Type</th><th className="py-1 pr-4">Name</th><th className="py-1 pr-4">Value</th><th className="py-1 pr-2"><span className="sr-only">Copy</span></th></tr>
                       </thead>
                       <tbody className="font-mono">
                         {d.records.map((r, i) => (
@@ -115,10 +115,32 @@ export function DomainManager({
                             <td className="py-1 pr-4">{r.type}</td>
                             <td className="py-1 pr-4 break-all">{r.name}</td>
                             <td className="py-1 pr-4 break-all">{r.value}</td>
+                            <td className="py-1 pr-2">
+                              <button
+                                type="button"
+                                aria-label={`Copy ${r.type} record value`}
+                                onClick={() => { void navigator.clipboard.writeText(r.value); toast({ variant: 'success', title: 'Copied' }); }}
+                                className="rounded p-1 text-muted-fg hover:bg-muted hover:text-foreground"
+                              >
+                                <CopyIcon className="size-3.5" aria-hidden />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="mt-3 space-y-1.5 text-xs text-muted-fg">
+                    <p>
+                      <strong className="text-foreground">Cloudflare:</strong> add the records above in DNS → Records. Cloudflare
+                      flattens the apex CNAME automatically. Start with the cloud icon grey (DNS only) until the domain
+                      verifies; you can enable the orange-cloud proxy afterwards.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">Host it yourself instead:</strong> download the website ZIP
+                      (Overview → Download ZIP), upload it to any static host or your own server, and point your
+                      domain&apos;s A/CNAME records at that server — no records here needed in that case.
+                    </p>
                   </div>
                 </div>
               ) : null}

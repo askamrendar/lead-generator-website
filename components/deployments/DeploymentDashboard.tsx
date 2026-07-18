@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Ban,
+  Download,
   ExternalLink,
   RotateCcw,
   RefreshCw,
@@ -96,7 +97,11 @@ export function DeploymentDashboard({
       render: (d) => (
         <div className="flex items-center justify-end gap-1">
           {d.url ? (
-            <a href={d.url} target="_blank" rel="noreferrer" aria-label="Open deployment" className="rounded p-1.5 text-muted-fg hover:bg-muted hover:text-foreground"><ExternalLink className="size-4" aria-hidden /></a>
+            d.url.includes('/export') ? (
+              <a href={d.url} aria-label="Download ZIP" title="Download ZIP" className="rounded p-1.5 text-muted-fg hover:bg-muted hover:text-foreground"><Download className="size-4" aria-hidden /></a>
+            ) : (
+              <a href={d.url} target="_blank" rel="noreferrer" aria-label="Open deployment" title="Open deployment" className="rounded p-1.5 text-muted-fg hover:bg-muted hover:text-foreground"><ExternalLink className="size-4" aria-hidden /></a>
+            )
           ) : null}
           <button type="button" aria-label="Logs" onClick={() => setLogsOf(d)} className="rounded p-1.5 text-muted-fg hover:bg-muted hover:text-foreground"><ScrollText className="size-4" aria-hidden /></button>
           <button type="button" aria-label="Retry" disabled={pending} onClick={() => run(() => retryAction(websiteId, d.id), 'Redeploying')} className="rounded p-1.5 text-muted-fg hover:bg-muted hover:text-foreground disabled:opacity-40"><RefreshCw className="size-4" aria-hidden /></button>

@@ -296,6 +296,10 @@ model Website {
   builderConfig    Json?
   /// SEO engine configuration snapshot (metadata/JSON-LD inputs).
   seoConfig        Json?
+  /// Per-page content overrides from the Site Editor, keyed by site-relative path
+  /// (e.g. "/", "/services/drain-cleaning"). Merged over AI/deterministic content
+  /// at render time (lib/websites/content-overrides) — pages stay derived.
+  contentOverrides Json?
   /// Version/hash of the AI content bound to this website (see lib/ai/versioning).
   aiContentVersion String?
   generatedAt      DateTime?

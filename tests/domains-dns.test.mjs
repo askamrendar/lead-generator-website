@@ -32,13 +32,17 @@ test('verification token is prefixed + unique', () => {
 
 test('expected records include a TXT verify record with the token', () => {
   const token = 'lsp-verify-abc';
-  const apexRecords = expectedRecords('example.com', token);
+  const appHost = 'app-production-test.up.railway.app';
+  const apexRecords = expectedRecords('example.com', token, appHost);
   assert.ok(apexRecords.some((r) => r.type === 'TXT' && r.value === token));
-  assert.ok(apexRecords.some((r) => r.type === 'A'));
-  assert.ok(apexRecords.some((r) => r.type === 'CNAME' && r.name.startsWith('www.')));
+  // No hardcoded IPs — apex points at the real platform host via CNAME/ALIAS
+  // (Cloudflare flattens CNAME at root), so host IP changes never break domains.
+  assert.equal(apexRecords.some((r) => r.type === 'A'), false);
+  assert.ok(apexRecords.some((r) => r.type === 'CNAME' && r.name === 'example.com' && r.value === appHost));
+  assert.ok(apexRecords.some((r) => r.type === 'CNAME' && r.name.startsWith('www.') && r.value === appHost));
 
-  const subRecords = expectedRecords('app.example.com', token);
-  assert.ok(subRecords.some((r) => r.type === 'CNAME' && r.name === 'app.example.com'));
+  const subRecords = expectedRecords('app.example.com', token, appHost);
+  assert.ok(subRecords.some((r) => r.type === 'CNAME' && r.name === 'app.example.com' && r.value === appHost));
   assert.equal(subRecords.some((r) => r.type === 'A'), false);
 });
 

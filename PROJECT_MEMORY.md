@@ -221,6 +221,36 @@ or record it as verified on gate results that were not run.
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
 
+- **UX round: ZIP download + Site Editor + Cloudflare domains** — ✅ VERIFIED (2026-07-19): all four gates green
+  (lint · type-check · test **181/181** (+6) · build 95 pages incl. new `/editor/[websiteId]` route) + local prod-server
+  E2E: editor 200 authed / 307→login anon; Builder tab 308→`/editor/<id>`; DB-seeded overrides rendered on served
+  pages (home h1 + service seoTitle replaced, other pages untouched); Overview "Download ZIP" → 200 application/zip.
+  *Objective (user-reported issues from production UI):* (1) no ZIP download after generation; (2) Builder cramped
+  inside dashboard chrome, only edits a home draft the served site never reads, no page navigation; (3) domains UX
+  told users to point DNS at placeholder `app.localsitespro.com`/Vercel IP `76.76.21.21` — Cloudflare flow needed.
+  *Files added:* `lib/websites/content-overrides.ts` (pure zod: per-page copy patch keyed by site path; merge
+  `applyPageOverride` — empty values never override; structural fields rejected), `lib/websites/editor-service.ts`
+  (ONLY read/write path for `Website.contentOverrides`; lists pages via new `enumerateContentPages`),
+  `app/editor/[websiteId]/{page,actions}.ts` + `components/editor/SiteContentEditor.tsx` (FULL-PAGE editor outside
+  the dashboard shell — SiteChrome bares `/editor`, middleware auth-guards it; sidebar lists ALL pages grouped
+  core/services/areas with override dots, per-page CMS form with generated copy as placeholders, save/reset,
+  per-page preview link), migration `0011_content_overrides` (Website.contentOverrides JSONB),
+  `tests/content-overrides.test.mjs` (+6). *Files modified:* `lib/htmlgen/engine.ts` (opts.overrides merged in the
+  ONE `content()` helper — live/hosted/export all inherit; +`enumerateContentPages` so the editor shares the route
+  map), `render-service.ts` (SiteBundle +contentOverrides, parsed defensively), builder tab → redirect to editor
+  (old block Builder edited a dead draft; stack kept for a future visual mode), `WebsiteActions` (Preview + Download
+  ZIP now real; "Edit site content"), Overview (+Preview/+Download ZIP buttons, plain `<a>` — Link would prefetch
+  the export), DeploymentDashboard (export rows show a labeled Download icon), `lib/domains/dns.ts` (expectedRecords
+  now REQUIRES appHost; apex = CNAME to the real platform host — Cloudflare flattens; NO hardcoded IPs),
+  `lib/domains/service.ts` (platformHost() from RAILWAY_PUBLIC_DOMAIN else NEXT_PUBLIC_SITE_URL), DomainManager
+  (copy buttons, Cloudflare grey-cloud-until-verified guidance, self-hosting note: download ZIP + point DNS at your
+  own server), domains-dns tests updated (no-IP invariant). *Decisions:* content overrides over builderConfig —
+  pages stay DERIVED (template switching/regeneration keep working, no stored HTML); editor at top-level `/editor`
+  for full viewport (matches user's LeadsXPro reference: page list left, content form right). *Tech debt:* overrides
+  are copy-only (no per-page image/layout control); old builder stack now unreachable from UI (delete later);
+  ContentItem "Pages" tab still blog-only. *Next:* deploy + Railway re-verify; migration 0011 auto-applies via
+  Dockerfile `prisma migrate deploy`.
+
 - **Template 2 + HTML pack registry (multi-template serving)** — ✅ VERIFIED (2026-07-18): all four gates green
   (lint · type-check · test **175/175** (+19) · build, app sitemap 66) + local runtime E2E on a prod server (:3333):
   Template 2 site served every page 200 (home/about-us/contact-us/services/3× per-service/near-me/2× per-area +

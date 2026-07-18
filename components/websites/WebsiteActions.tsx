@@ -41,7 +41,7 @@ import {
 /**
  * Per-website overflow menu + its dialogs (rename, delete confirm). Real actions
  * (rename/duplicate/archive/restore/delete) call server actions through the service;
- * not-yet-built actions (preview/export/connect-domain) are marked disabled.
+ * Preview opens the live site surface; Download ZIP streams the static export.
  */
 export function WebsiteActions({ website }: { website: WebsiteSummary }) {
   const { toast } = useToast();
@@ -68,9 +68,9 @@ export function WebsiteActions({ website }: { website: WebsiteSummary }) {
   const items: ActionItem[] = [
     // Open / edit
     { label: 'Open dashboard', icon: LayoutDashboard, href: to('') },
-    { label: 'Open Builder', icon: Paintbrush, href: to('builder') },
+    { label: 'Edit site content', icon: Paintbrush, href: `/editor/${website.id}` },
     { label: 'Generate content', icon: Sparkles, href: to('ai-generator') },
-    { label: 'Preview', icon: Eye, disabled: true },
+    { label: 'Preview', icon: Eye, onSelect: () => window.open(`/sites/${website.id}`, '_blank', 'noopener') },
     // Modules (navigate to the website's tabs)
     { label: 'SEO', icon: Search, href: to('seo'), separatorBefore: true },
     { label: 'Pages', icon: FileText, href: to('pages') },
@@ -85,7 +85,7 @@ export function WebsiteActions({ website }: { website: WebsiteSummary }) {
     isArchived
       ? { label: 'Restore', icon: ArchiveRestore, onSelect: () => run(() => restoreWebsiteAction(website.id), 'Website restored') }
       : { label: 'Archive', icon: Archive, onSelect: () => run(() => archiveWebsiteAction(website.id), 'Website archived') },
-    { label: 'Download ZIP', icon: Download, disabled: true },
+    { label: 'Download ZIP', icon: Download, onSelect: () => { window.location.href = `/api/websites/${website.id}/export`; } },
     { label: 'Delete', icon: Trash2, destructive: true, onSelect: () => setDeleteOpen(true), separatorBefore: true },
   ];
 

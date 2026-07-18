@@ -44,7 +44,7 @@ export default function middleware(req: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  if (/^\/(dashboard|app)(\/|$)/.test(req.nextUrl.pathname)) {
+  if (/^\/(dashboard|app|editor)(\/|$)/.test(req.nextUrl.pathname)) {
     return (authMiddleware as unknown as (r: NextRequest) => Response)(req);
   }
 

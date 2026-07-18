@@ -21,6 +21,7 @@ const BARE_PREFIXES = [
   '/logout',
   '/dashboard',
   '/app',
+  '/editor',
 ];
 
 function isBareRoute(pathname: string): boolean {

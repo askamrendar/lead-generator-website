@@ -22,6 +22,7 @@ import { buildBlockContext } from '@/lib/builder/context';
 import { selectBuild } from '@/lib/builder/select';
 import { getTemplate } from '@/templates/registry';
 import { resolveHtmlPackId } from '@/templates/html/registry';
+import { parseContentOverrides, type ContentOverrides } from '@/lib/websites/content-overrides';
 import { normalizeDocument } from '@/lib/builder/editor/document';
 import { legalPage } from '@/lib/websites/legal-pages';
 import type { BusinessConfig } from '@/lib/generator/schema';
@@ -71,6 +72,8 @@ export interface SiteBundle {
   /** HTML pack id (templates/html/registry) — resolved from the RAW row value,
    *  independent of the block-template selection above. */
   htmlTemplateId: string;
+  /** Site Editor per-page content overrides (parsed, defensive). */
+  contentOverrides: ContentOverrides;
   themeId: ThemeId;
   industryId: string;
 }
@@ -82,6 +85,7 @@ type WebsiteRow = {
   status: string;
   businessConfig: unknown;
   builderConfig: unknown;
+  contentOverrides?: unknown;
   themeId: string | null;
   templateId: string | null;
   industryId: string | null;
@@ -111,13 +115,13 @@ export function bundleFromRow(row: WebsiteRow, origin?: string): SiteBundle | nu
     business,
     document,
     templateId: selection.template.id,
-    /** HTML pack id (templates/html/registry) — resolved from the RAW row value
-   *  (falling back to the wizard's brand choice before first generation),
-   *  independent of the block-template selection above. */
-  htmlTemplateId: resolveHtmlPackId(
-    row.templateId ??
-      (row.businessConfig as { brand?: { templateId?: string } } | null)?.brand?.templateId,
-  ),
+    // HTML pack id — resolved from the RAW row value (falling back to the wizard's
+    // brand choice before first generation), independent of the block selection.
+    htmlTemplateId: resolveHtmlPackId(
+      row.templateId ??
+        (row.businessConfig as { brand?: { templateId?: string } } | null)?.brand?.templateId,
+    ),
+    contentOverrides: parseContentOverrides(row.contentOverrides),
     themeId: document.themeId,
     industryId: selection.industry.id,
   };
@@ -140,6 +144,7 @@ export async function loadSiteBundle(
       status: true,
       businessConfig: true,
       builderConfig: true,
+      contentOverrides: true,
       themeId: true,
       templateId: true,
       industryId: true,
@@ -322,7 +327,11 @@ export interface HtmlRenderOptions {
  * and repeatable — surfaces call it per request; ISR/CDN caching sits above.
  */
 export async function renderHtmlSite(bundle: SiteBundle, opts: HtmlRenderOptions): Promise<HtmlSite> {
-  return generateHtmlSite(bundle.business, { ...opts, templateId: bundle.htmlTemplateId });
+  return generateHtmlSite(bundle.business, {
+    ...opts,
+    templateId: bundle.htmlTemplateId,
+    overrides: bundle.contentOverrides,
+  });
 }
 
 /** Render one page (or sitemap/robots) of a website's HTML site. */

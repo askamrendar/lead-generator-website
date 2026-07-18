@@ -39,9 +39,13 @@ export function makeVerificationToken(): string {
 
 /**
  * The DNS records the user must create to verify + point a domain at the platform.
- * `appHost` is the platform host apex (e.g. the deploy target). Generic + honest.
+ * `appHost` is the REAL host serving this app (custom-domain requests must reach it
+ * so the Host-header rewrite can route them) — callers pass it from the deployment
+ * env (lib/domains/service resolves it via lib/site). Cloudflare-friendly: CNAME
+ * everywhere (Cloudflare flattens CNAME at the apex), no hardcoded IPs — pointing
+ * an A record at a platform IP breaks whenever the host's IP changes.
  */
-export function expectedRecords(hostname: string, token: string, appHost = 'app.localsitespro.com'): DnsRecord[] {
+export function expectedRecords(hostname: string, token: string, appHost: string): DnsRecord[] {
   const host = hostname.trim().toLowerCase();
   const records: DnsRecord[] = [
     { type: 'TXT', name: `_lsp-verify.${apexOf(host)}`, value: token, note: 'Ownership verification' },
@@ -49,7 +53,12 @@ export function expectedRecords(hostname: string, token: string, appHost = 'app.
   if (isSubdomain(host)) {
     records.push({ type: 'CNAME', name: host, value: appHost, note: 'Points the subdomain to the platform' });
   } else {
-    records.push({ type: 'A', name: host, value: '76.76.21.21', note: 'Apex A record (platform ingress)' });
+    records.push({
+      type: 'CNAME',
+      name: host,
+      value: appHost,
+      note: 'Apex — use Cloudflare (flattens CNAME at root) or your DNS host’s ALIAS/ANAME record',
+    });
     records.push({ type: 'CNAME', name: `www.${host}`, value: appHost, note: 'www subdomain' });
   }
   return records;
