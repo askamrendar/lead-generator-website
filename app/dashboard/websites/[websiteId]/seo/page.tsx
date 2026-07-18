@@ -45,6 +45,7 @@ export default async function WebsiteSeoPage({
     origin: `${appOrigin}/sites/${websiteId}`,
     base: `/sites/${websiteId}`,
     appOrigin,
+    templateId: website.templateId ?? undefined,
   });
   const routes = site.pages.map((p) => ({
     path: p.path,

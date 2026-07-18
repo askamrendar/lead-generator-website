@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { requireWorkspaceAccess, requireWebsiteAccess } from '@/lib/auth/access';
 import { slugify } from '@/lib/utils';
+import { isHtmlPackId } from '@/templates/html/registry';
 import type { WebsiteSummary, WebsiteDetail, WebsiteBusinessConfig } from '@/lib/websites/types';
 import type { WebsiteWizardInput } from '@/lib/websites/schema';
 
@@ -165,6 +166,16 @@ export async function createWebsite(
 export async function renameWebsite(websiteId: string, name: string): Promise<void> {
   await requireWebsiteAccess(websiteId, 'website:update');
   await prisma.website.update({ where: { id: websiteId }, data: { name } });
+}
+
+/** Switch the HTML template pack the site renders through. Takes effect on the
+ *  next render (pages are derived) — no regeneration needed. */
+export async function setWebsiteTemplate(websiteId: string, templateId: string): Promise<void> {
+  await requireWebsiteAccess(websiteId, 'website:update');
+  if (!isHtmlPackId(templateId)) {
+    throw new Error(`Unknown template: ${templateId}`);
+  }
+  await prisma.website.update({ where: { id: websiteId }, data: { templateId } });
 }
 
 /** Duplicate (a.k.a. clone) a website into the same workspace as a fresh DRAFT. */

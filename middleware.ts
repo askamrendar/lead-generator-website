@@ -52,7 +52,9 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except Next internals, static assets, and API routes (APIs must never
-  // be host-rewritten: exported/hosted sites post leads to the app API directly).
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // Everything except Next internals, static assets, API routes (APIs must never
+  // be host-rewritten: exported/hosted sites post leads to the app API directly),
+  // and template-pack assets (custom-domain pages load css/js/images from
+  // /templates/<pack>/assets — rewriting them into /hosted would 404).
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|templates/).*)'],
 };

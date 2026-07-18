@@ -1,4 +1,5 @@
 import { loadSiteBundle, renderHtmlSite } from '@/lib/websites/render-service';
+import { getHtmlPack } from '@/templates/html/registry';
 import { zipStore, type ZipEntry } from '@/lib/export/zip';
 import { resolveSiteUrl } from '@/lib/site';
 import { logger } from '@/lib/logger';
@@ -6,10 +7,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 /**
- * Static-site ZIP export — generates every page of the website through the
- * royal-oak HTML template (lib/htmlgen — the same renderer the hosted surface
- * uses) and packages HTML + the template's asset bundle (css/js/fonts/images)
- * + robots.txt + sitemap.xml into a dependency-free STORE ZIP.
+ * Static-site ZIP export — generates every page of the website through its
+ * chosen HTML template pack (lib/htmlgen — the same renderer the hosted
+ * surface uses) and packages HTML + the pack's asset bundle (css/js/fonts/
+ * images) + robots.txt + sitemap.xml into a dependency-free STORE ZIP.
  *
  * The archive is fully self-contained: open `index.html` locally or upload the
  * folder to any static host. The lead form posts back to this app's /api/lead.
@@ -90,7 +91,13 @@ export async function exportStaticSite(
     { path: 'robots.txt', data: site.robotsTxt },
   );
 
-  const assetsDir = path.join(process.cwd(), 'public', 'templates', 'royal-oak', 'assets');
+  const assetsDir = path.join(
+    process.cwd(),
+    'public',
+    'templates',
+    getHtmlPack(bundle.htmlTemplateId).assetDir,
+    'assets',
+  );
   entries.push(...(await collectAssets(assetsDir, 'assets')));
 
   logger.info('static export built', { websiteId, pages: site.pages.length });

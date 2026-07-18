@@ -51,6 +51,8 @@ export const brandStepSchema = z.object({
   primaryColor: hexColor.default('#2563eb'),
   accentColor: hexColor.default('#f97316'),
   fontFamily: z.string().trim().max(60).default('Inter'),
+  /** HTML template pack the site renders through (templates/html/registry). */
+  templateId: z.enum(['template-1', 'template-2']).default('template-1'),
 });
 
 export const detailsStepSchema = z.object({

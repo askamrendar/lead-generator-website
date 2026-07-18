@@ -59,6 +59,7 @@ const INITIAL: Form = {
   primaryColor: '#2563eb',
   accentColor: '#f97316',
   fontFamily: 'Inter',
+  templateId: 'template-1',
   phone: '',
   email: '',
   hours: '',
@@ -75,7 +76,7 @@ const INITIAL: Form = {
 const STEP_FIELDS: string[][] = [
   ['businessName', 'category', 'primaryService', 'additionalServices'],
   ['country', 'state', 'city', 'additionalCities', 'zipCodes', 'neighborhoods'],
-  ['logoUrl', 'primaryColor', 'accentColor', 'fontFamily'],
+  ['logoUrl', 'primaryColor', 'accentColor', 'fontFamily', 'templateId'],
   ['phone', 'email', 'hours', 'website', 'facebook', 'instagram', 'x'],
   ['targetKeywords', 'competitors', 'servicePages', 'locationPages'],
 ];
@@ -417,9 +418,48 @@ function ColorField({ id, label, value, onChange, error }: { id: string; label: 
   );
 }
 
+const TEMPLATES = [
+  {
+    key: 'template-1',
+    label: 'Template 1',
+    description: 'Classic contractor design — light theme, banner hero with quote form.',
+  },
+  {
+    key: 'template-2',
+    label: 'Template 2',
+    description: 'Modern emergency-service design — dark theme, trust badges, sticky call bar.',
+  },
+] as const;
+
 function BrandStep({ form, set, errors }: StepProps) {
+  const setTemplate = set('templateId');
   return (
     <div className="space-y-4">
+      <div>
+        <p className="text-sm font-medium text-foreground">Website template</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2" role="group" aria-label="Website template">
+          {TEMPLATES.map((t) => {
+            const active = (form.templateId ?? 'template-1') === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() =>
+                  setTemplate({ target: { value: t.key } } as React.ChangeEvent<HTMLInputElement>)
+                }
+                aria-pressed={active}
+                className={cn(
+                  'flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition-colors',
+                  active ? 'border-brand bg-brand/5' : 'border-border hover:bg-muted',
+                )}
+              >
+                <span className="text-sm font-semibold text-foreground">{t.label}</span>
+                <span className="text-xs text-muted-fg">{t.description}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <FormField id="logoUrl" label="Logo URL" hint="Optional. Media uploads come later." error={errors.logoUrl}>
         <Input value={form.logoUrl} onChange={set('logoUrl')} placeholder="https://…/logo.png" />
       </FormField>
@@ -493,6 +533,7 @@ function ReviewStep({ form }: { form: Form }) {
     ['Category', form.category || '—'],
     ['Primary service', form.primaryService || '—'],
     ['Location', [form.city, form.state, form.country].filter(Boolean).join(', ') || '—'],
+    ['Template', TEMPLATES.find((t) => t.key === form.templateId)?.label ?? 'Template 1'],
     ['Contact', [form.phone, form.email].filter(Boolean).join(' · ') || '—'],
     ['Pages', `${form.servicePages || 0} service · ${form.locationPages || 0} location`],
   ];

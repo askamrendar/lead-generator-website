@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireWebsiteAccess } from '@/lib/auth/access';
 import { parseBusinessConfig } from '@/lib/generator/schema';
 import { wizardToBusinessConfig } from '@/lib/websites/business-adapter';
+import { resolveHtmlPackId } from '@/templates/html/registry';
 import { aiSelectBuild } from '@/lib/builder/select';
 import { composePage } from '@/lib/builder/compose';
 import { normalizeDocument } from '@/lib/builder/editor/document';
@@ -56,7 +57,7 @@ export async function generateWebsiteCore(websiteId: string): Promise<GenerateRe
 async function generateWebsiteCoreInner(websiteId: string): Promise<GenerateResult> {
   const w = await prisma.website.findUniqueOrThrow({
     where: { id: websiteId },
-    select: { businessConfig: true, builderConfig: true },
+    select: { businessConfig: true, builderConfig: true, templateId: true },
   });
 
   if (!w.businessConfig) {
@@ -84,9 +85,14 @@ async function generateWebsiteCoreInner(websiteId: string): Promise<GenerateResu
       status: 'GENERATED',
       generatedAt: new Date(),
       themeId: selection.themeId,
-      // Sites serve through the royal-oak HTML template (the only template);
-      // the block selection above still powers the Visual Builder's draft doc.
-      templateId: 'royal-oak',
+      // Sites serve through an HTML template pack (templates/html/registry).
+      // Preserve a previously chosen pack across regeneration; otherwise honor
+      // the wizard's brand.templateId; legacy 'royal-oak' aliases to template-1.
+      // The block selection above still powers the Visual Builder's draft doc.
+      templateId: resolveHtmlPackId(
+        w.templateId ??
+          (w.businessConfig as { brand?: { templateId?: string } }).brand?.templateId,
+      ),
       industryId: selection.industry.id,
     },
   });

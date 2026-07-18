@@ -2,7 +2,7 @@
 
 > **Read this file first, and usually only this file.** It is the canonical memory for
 > the project. Everything else in `.claude/` and the root docs is a supporting reference.
-> Update this file whenever a milestone finishes. Last updated: 2026-07-10.
+> Update this file whenever a milestone finishes. Last updated: 2026-07-18.
 
 ---
 
@@ -220,6 +220,48 @@ or record it as verified on gate results that were not run.
 
 ## 18 · Milestone Log (append-only; newest first)
 > Template: `Milestone · Objective · Files Changed · Architecture Decisions · Lessons Learned · Technical Debt · Next Milestone`
+
+- **Template 2 + HTML pack registry (multi-template serving)** — ✅ VERIFIED (2026-07-18): all four gates green
+  (lint · type-check · test **175/175** (+19) · build, app sitemap 66) + local runtime E2E on a prod server (:3333):
+  Template 2 site served every page 200 (home/about-us/contact-us/services/3× per-service/near-me/2× per-area +
+  per-site sitemap.xml 10 URLs + robots.txt); template switching via `Website.templateId` verified both directions;
+  custom-domain hosting verified (verified ACTIVE domain → 200, `class="t2"`, canonical = domain) incl. the
+  middleware asset carve-out (`/templates/**` no longer host-rewritten — fixes pre-existing royal-oak CSS 404 on
+  custom domains); ZIP export = 10 HTML pages + only template-2 assets, depth-relative `../../assets/` links;
+  Template 1 export regression green (royal-oak bundle intact); lead form + honeypot posts 200 with HTML thank-you;
+  zero external resources / zero JS (JSON-LD only) / no iframes on Template 2 → no CSP violations (verified against
+  the served CSP header). *Objective (user directive):* second HTML template pack inspired by unclognyc.com
+  (inspiration ONLY — no copied copy/images/branding; tests assert no reference strings leak), generic across all
+  industries, fully data-driven (N services → N cards + N pages; areas only from user locations; empty
+  reviews/faqs/stats/areas hide their sections), user-facing template names sequential ("Template 1"/"Template 2" —
+  never business names). *Files added:* `templates/html/types.ts` (PackChrome/PackPageMeta/PackCard/
+  HtmlPackRenderer/HtmlPack — the platform↔pack contract: platform owns routing/SEO/content/JSON-LD/sitemap, packs
+  own markup only), `templates/html/registry.ts` (template-1=royal-oak, template-2; alias `royal-oak→template-1`
+  read-side, NO migration; resolveHtmlPackId defaults template-1; isHtmlPackId strict for setters),
+  `templates/html/article.ts` (shared articleHtml, moved from engine), `templates/html/royal-oak/pack.ts`
+  (compositions moved verbatim from engine — byte-identical output + new OG/Twitter meta),
+  `templates/html/template-2/{sections,pack}.ts` (pure string-builders: utility bar, sticky header, CSS-checkbox
+  mobile nav, dropdowns ≤8 items else index-link (nav scales to any N), hero+badges+lead form, trust strip, card
+  grids (auto-fill), why-us, reviews, details/summary FAQ, CTA band, contact (no map iframe — CSP), footer, sticky
+  mobile call bar), `public/templates/template-2/assets/css/site.css` (single 12.6 KB sheet, system fonts,
+  `--primary/--accent` from brand HSL), `tests/{html-registry,template-2}.test.mjs` (+19: cardinality 5/15,
+  escaping, honeypot, OG/Twitter/canonical, conditional sections, nav adaptation, no-reference-leak, ZIP asset
+  contract, royal-oak meta regression). *Files modified:* `lib/htmlgen/engine.ts` (pack dispatch via
+  `opts.templateId`; chrome +category/tagline/appOrigin/hoursHtml; routes/content/SEO strings unchanged),
+  `lib/websites/render-service.ts` (SiteBundle +`htmlTemplateId` from RAW row.templateId — NOT selectBuild's block
+  id — with wizard brand fallback), `lib/export/static-site.ts` (pack assetDir), `lib/websites/generate-service.ts`
+  (stores resolveHtmlPackId(w.templateId ?? wizard brand.templateId) — preserves choice across regeneration; no
+  more 'royal-oak' hard-stamp), `lib/websites/schema.ts` (brand +templateId enum default template-1 — never enters
+  generator BusinessConfig → AI cache hash stable), wizard Brand-step picker cards + Review row, Settings "Design"
+  card + `setWebsiteTemplate` service/action, `middleware.ts` matcher +`templates/` exclusion, royal-oak
+  `sections.ts` pageShell +OG/Twitter, SEO tab passes templateId. *Decisions:* per-page renderer interface (not
+  shared section taxonomy) since pack designs differ structurally; registry uses relative `.ts` imports for the
+  node --test type-stripping runner; WebsiteSettings keeps a local TEMPLATE_OPTIONS list (importing the registry
+  would ship pack markup to the client bundle). *Tech debt:* Template 2 hero uses a CSS gradient/`heroImage`
+  background (no `next/image` — string-built HTML); block-template registry ids ('base' etc.) still land in
+  `Website.templateId` for pre-existing rows — resolved to Template 1 read-side; Lighthouse not yet formally run
+  (static no-JS output should score high; measure on a live origin). *Next:* Lighthouse audit on a deployed
+  Template 2 site; more packs as siblings; template thumbnails in the picker.
 
 - **Royal-Oak HTML template — the ONE site template (user-provided design)** — ✅ VERIFIED (2026-07-17): all six
   gates green (test 156/156, app sitemap 66) + local runtime E2E (royal-oak site served for Peach State Electric:

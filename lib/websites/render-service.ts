@@ -21,6 +21,7 @@ import { composePage } from '@/lib/builder/compose';
 import { buildBlockContext } from '@/lib/builder/context';
 import { selectBuild } from '@/lib/builder/select';
 import { getTemplate } from '@/templates/registry';
+import { resolveHtmlPackId } from '@/templates/html/registry';
 import { normalizeDocument } from '@/lib/builder/editor/document';
 import { legalPage } from '@/lib/websites/legal-pages';
 import type { BusinessConfig } from '@/lib/generator/schema';
@@ -67,6 +68,9 @@ export interface SiteBundle {
   business: BusinessConfig;
   document: BuilderDocument;
   templateId: string;
+  /** HTML pack id (templates/html/registry) — resolved from the RAW row value,
+   *  independent of the block-template selection above. */
+  htmlTemplateId: string;
   themeId: ThemeId;
   industryId: string;
 }
@@ -107,6 +111,13 @@ export function bundleFromRow(row: WebsiteRow, origin?: string): SiteBundle | nu
     business,
     document,
     templateId: selection.template.id,
+    /** HTML pack id (templates/html/registry) — resolved from the RAW row value
+   *  (falling back to the wizard's brand choice before first generation),
+   *  independent of the block-template selection above. */
+  htmlTemplateId: resolveHtmlPackId(
+    row.templateId ??
+      (row.businessConfig as { brand?: { templateId?: string } } | null)?.brand?.templateId,
+  ),
     themeId: document.themeId,
     industryId: selection.industry.id,
   };
@@ -289,7 +300,7 @@ export async function renderSitePage(
 }
 
 // ---------------------------------------------------------------------------
-// HTML-template rendering (royal-oak) — the serving path for tenant sites
+// HTML-template rendering — the serving path for tenant sites
 // ---------------------------------------------------------------------------
 
 import { generateHtmlSite, normalizePath, type HtmlSite } from '@/lib/htmlgen/engine';
@@ -306,12 +317,12 @@ export interface HtmlRenderOptions {
 }
 
 /**
- * Build the full HTML site for a bundle via the royal-oak template. Content is
- * cache-first (AI when warmed, deterministic otherwise), so this is cheap and
- * repeatable — surfaces call it per request; ISR/CDN caching sits above.
+ * Build the full HTML site for a bundle via its chosen template pack. Content
+ * is cache-first (AI when warmed, deterministic otherwise), so this is cheap
+ * and repeatable — surfaces call it per request; ISR/CDN caching sits above.
  */
 export async function renderHtmlSite(bundle: SiteBundle, opts: HtmlRenderOptions): Promise<HtmlSite> {
-  return generateHtmlSite(bundle.business, opts);
+  return generateHtmlSite(bundle.business, { ...opts, templateId: bundle.htmlTemplateId });
 }
 
 /** Render one page (or sitemap/robots) of a website's HTML site. */
@@ -321,7 +332,7 @@ export async function renderHtmlPage(
   opts: HtmlRenderOptions,
 ): Promise<{ body: string; contentType: string } | null> {
   const clean = normalizePath(path);
-  const site = await generateHtmlSite(bundle.business, opts);
+  const site = await renderHtmlSite(bundle, opts);
   if (clean === '/sitemap.xml') return { body: site.sitemapXml, contentType: 'application/xml; charset=utf-8' };
   if (clean === '/robots.txt') return { body: site.robotsTxt, contentType: 'text/plain; charset=utf-8' };
   const page = site.pages.find((p) => p.path === clean);

@@ -6,6 +6,7 @@ import { websiteWizardSchema, renameWebsiteSchema } from '@/lib/websites/schema'
 import {
   createWebsite,
   renameWebsite,
+  setWebsiteTemplate,
   duplicateWebsite,
   archiveWebsite,
   restoreWebsite,
@@ -62,6 +63,23 @@ export async function renameWebsiteAction(
     revalidatePath('/dashboard/websites');
     revalidatePath(`/dashboard/websites/${websiteId}`);
   }
+  return result;
+}
+
+export async function setWebsiteTemplateAction(
+  websiteId: string,
+  templateId: string,
+): Promise<ActionResult> {
+  let result: ActionResult;
+  try {
+    await setWebsiteTemplate(websiteId, templateId);
+    result = { ok: true };
+  } catch (err) {
+    if (isAccessError(err)) return { ok: false, error: 'You do not have access to do that.' };
+    return { ok: false, error: 'Choose a valid template.' };
+  }
+  revalidatePath('/dashboard/websites');
+  revalidatePath(`/dashboard/websites/${websiteId}`);
   return result;
 }
 

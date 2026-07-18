@@ -63,6 +63,19 @@ export function pageShell(c: TplChrome, page: {
   body: string;
 }): string {
   const canonical = `${c.origin}${page.path === '/' ? '/' : page.path}`;
+  const socialImage = c.heroImage ?? c.logoUrl;
+  const socialMeta = [
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:site_name" content="${esc(c.name)}">`,
+    `<meta property="og:title" content="${esc(page.title)}">`,
+    `<meta property="og:description" content="${esc(page.description)}">`,
+    `<meta property="og:url" content="${canonical}">`,
+    ...(socialImage ? [`<meta property="og:image" content="${esc(socialImage)}">`] : []),
+    `<meta name="twitter:card" content="${socialImage ? 'summary_large_image' : 'summary'}">`,
+    `<meta name="twitter:title" content="${esc(page.title)}">`,
+    `<meta name="twitter:description" content="${esc(page.description)}">`,
+    ...(socialImage ? [`<meta name="twitter:image" content="${esc(socialImage)}">`] : []),
+  ].join('\n    ');
   const logo = c.logoUrl
     ? `<img src="${c.logoUrl}" alt="${esc(c.name)}" style="max-height:56px">`
     : `<span class="site-logo-text" style="font-family:Poppins,sans-serif;font-weight:700;font-size:22px;color:#373e45">${esc(c.name)}</span>`;
@@ -76,6 +89,7 @@ export function pageShell(c: TplChrome, page: {
     <title>${esc(page.title)}</title>
     <meta name="description" content="${esc(page.description)}">
     <link rel="canonical" href="${canonical}">
+    ${socialMeta}
     ${c.logoUrl ? `<link rel="icon" href="${c.logoUrl}">` : `<link rel="icon" href="${c.assets}/image/arrow-next-g.png">`}
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">

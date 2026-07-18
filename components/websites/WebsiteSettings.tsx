@@ -13,16 +13,29 @@ import { useToast } from '@/components/ui/toast';
 import type { WebsiteSummary } from '@/lib/websites/types';
 import {
   renameWebsiteAction,
+  setWebsiteTemplateAction,
   archiveWebsiteAction,
   restoreWebsiteAction,
   deleteWebsiteAction,
 } from '@/app/dashboard/websites/actions';
 
-/** Website settings: rename + danger zone (archive/restore, delete). */
+/** Display options mirroring templates/html/registry (kept local — importing the
+ *  registry would ship every pack's markup to the client bundle). */
+const TEMPLATE_OPTIONS = [
+  { id: 'template-1', label: 'Template 1 — Classic contractor (light)' },
+  { id: 'template-2', label: 'Template 2 — Modern emergency service (dark)' },
+] as const;
+
+/** Legacy stored id → canonical (mirrors the registry's alias). */
+const currentTemplateId = (raw: string | null): string =>
+  raw === 'royal-oak' || !raw ? 'template-1' : raw;
+
+/** Website settings: rename + design (template) + danger zone (archive/restore, delete). */
 export function WebsiteSettings({ website }: { website: WebsiteSummary }) {
   const router = useRouter();
   const { toast } = useToast();
   const [name, setName] = React.useState(website.name);
+  const [templateId, setTemplateId] = React.useState(currentTemplateId(website.templateId));
   const [pending, setPending] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const isArchived = website.status === 'ARCHIVED';
@@ -34,6 +47,20 @@ export function WebsiteSettings({ website }: { website: WebsiteSummary }) {
       setPending(false);
       if (res.ok) {
         toast({ variant: 'success', title: 'Saved' });
+        router.refresh();
+      } else {
+        toast({ variant: 'error', title: 'Save failed', description: res.error });
+      }
+    })();
+  }
+
+  function saveTemplate() {
+    setPending(true);
+    void (async () => {
+      const res = await setWebsiteTemplateAction(website.id, templateId);
+      setPending(false);
+      if (res.ok) {
+        toast({ variant: 'success', title: 'Template updated' });
         router.refresh();
       } else {
         toast({ variant: 'error', title: 'Save failed', description: res.error });
@@ -70,6 +97,33 @@ export function WebsiteSettings({ website }: { website: WebsiteSummary }) {
           </FormField>
           <LoadingButton type="button" loading={pending} onClick={save}>
             Save changes
+          </LoadingButton>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-sm font-semibold text-foreground">Design</h2>
+        <div className="mt-4 space-y-4">
+          <FormField
+            id="ws-template"
+            label="Template"
+            hint="Changes apply immediately to the live site, preview, and exports."
+          >
+            <select
+              id="ws-template"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              {TEMPLATE_OPTIONS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <LoadingButton type="button" loading={pending} onClick={saveTemplate}>
+            Save template
           </LoadingButton>
         </div>
       </Card>
