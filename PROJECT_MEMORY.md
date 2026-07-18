@@ -616,6 +616,17 @@ or record it as verified on gate results that were not run.
 ## 19 · Session Log (append-only; newest first)
 > Template: `Date · Objective · Files Modified · Architecture Changes · Issues Found · Issues Fixed · Remaining Work · Next Task`
 
+- **2026-07-18 (Template 2 shipped to Railway)** — *Objective:* commit + deploy the Template 2 milestone (see §18
+  entry) after owner approval. *Shipped:* commit `0d0f397` on `develop` (22 files, +1700/−179) pushed → Railway
+  auto-deployed (build+deploy ~2 min, service Online). *Production verified live:* template-2 CSS 200; published
+  legacy site ("Lone Star Lawn Care", templateId 'base') renders Template 1 with the new OG/Twitter meta —
+  no regression; test site "Mile High Roofing" switched to `template-2` → renders the new design (class="t2",
+  sticky call bar, own h1) with owner session; per-site sitemap/robots 200. *Also this session:* reset the UAT
+  account password (railway-verify-0717@example.com) via the app's own hashPassword against the public DB proxy —
+  login + dashboard 200 verified before and after deploy. *Test data on production:* Mile High Roofing left on
+  Template 2 intentionally as the owner's review artifact. *Remaining:* Lighthouse audit on a published Template 2
+  site; template thumbnails in the picker. *Note:* no tags/merges — only `develop` was pushed, per approval scope.
+
 - **2026-07-17 (Website Generator COMPLETE — Railway production-verified)** — *Objective:* resume from
   `feat: BYO AI keys…`, finish the generator, verify everything live on Railway. *Shipped:* (1) **in-process
   background worker** (`instrumentation.ts` self-fetches `/api/jobs/run` over loopback every 15s when
